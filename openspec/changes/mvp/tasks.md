@@ -1,11 +1,11 @@
 ## 1. Monorepo Scaffolding
 
-- [ ] 1.1 Initialise pnpm workspace with `pnpm-workspace.yaml` listing `apps/*` and `packages/*`; verify `pnpm install` completes with no errors.
-- [ ] 1.2 Create `packages/shared` with `package.json` (`@shooter/shared`), `tsconfig.json`, and `src/index.ts`; verify it can be imported by apps via workspace protocol.
-- [ ] 1.3 Create `packages/db` with `package.json` (`@shooter/db`), Prisma dependency, and placeholder `prisma/schema.prisma`; verify `prisma generate` runs without error.
-- [ ] 1.4 Create `apps/server` with `package.json` (`@shooter/server`), TypeScript config, and `src/index.ts` entry point; verify `pnpm --filter @shooter/server build` succeeds.
-- [ ] 1.5 Create `apps/client` with Vite + React + TypeScript template; verify `pnpm --filter @shooter/client dev` serves the default Vite page.
-- [ ] 1.6 Add root `tsconfig.base.json` shared by all packages; verify all packages extend it and `tsc --noEmit` passes across the monorepo.
+- [x] 1.1 Initialise pnpm workspace with `pnpm-workspace.yaml` listing `apps/*` and `packages/*`; verify `pnpm install` completes with no errors.
+- [x] 1.2 Create `packages/shared` with `package.json` (`@shooter/shared`), `tsconfig.json`, and `src/index.ts`; verify it can be imported by apps via workspace protocol.
+- [x] 1.3 Create `packages/db` with `package.json` (`@shooter/db`), Prisma dependency, and placeholder `prisma/schema.prisma`; verify `prisma generate` runs without error.
+- [x] 1.4 Create `apps/server` with `package.json` (`@shooter/server`), TypeScript config, and `src/index.ts` entry point; verify `pnpm --filter @shooter/server build` succeeds.
+- [x] 1.5 Create `apps/client` with Vite + React + TypeScript template; verify `pnpm --filter @shooter/client dev` serves the default Vite page.
+- [x] 1.6 Add root `tsconfig.base.json` shared by all packages; verify all packages extend it and `tsc --noEmit` passes across the monorepo.
 
 
 

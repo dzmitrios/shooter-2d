@@ -1,0 +1,15 @@
+// Placeholder schema — full models defined in task 2.1
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Placeholder model — replaced in task 2.1
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
