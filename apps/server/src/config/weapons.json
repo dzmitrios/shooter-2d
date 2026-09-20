@@ -1,0 +1,42 @@
+[
+  {
+    "id": "pistol",
+    "name": "Pistol",
+    "damage": 20,
+    "fireRate": 3,
+    "xpCost": 0,
+    "defaultUnlock": true
+  },
+  {
+    "id": "shotgun",
+    "name": "Shotgun",
+    "damage": 60,
+    "fireRate": 1,
+    "xpCost": 0,
+    "defaultUnlock": true
+  },
+  {
+    "id": "smg",
+    "name": "SMG",
+    "damage": 12,
+    "fireRate": 8,
+    "xpCost": 300,
+    "defaultUnlock": false
+  },
+  {
+    "id": "rifle",
+    "name": "Assault Rifle",
+    "damage": 35,
+    "fireRate": 5,
+    "xpCost": 500,
+    "defaultUnlock": false
+  },
+  {
+    "id": "sniper",
+    "name": "Sniper Rifle",
+    "damage": 120,
+    "fireRate": 0.8,
+    "xpCost": 800,
+    "defaultUnlock": false
+  }
+]

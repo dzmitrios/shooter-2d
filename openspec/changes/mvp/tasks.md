@@ -11,12 +11,12 @@
 
 ## 2. Database Schema and Static Config
 
-- [ ] 2.1 Write the Prisma schema in `packages/db/prisma/schema.prisma` with models: User, PlayerProfile (includes `rank Int @default(1000)`), WeaponUnlock, Room (RoomStatus enum: WAITING/IN_RUN/FINISHED; fields: id, maxPlayers, status, createdAt, startedAt — no code or hostId), RunResult (includes rankBefore and rankAfter); verify `prisma validate` passes.
-- [ ] 2.2 Create the initial migration with `prisma migrate dev --name init`; verify all tables are created in a local PostgreSQL instance.
-- [ ] 2.3 Export the Prisma client from `packages/db/src/index.ts`; verify `apps/server` can import `db` and run a simple `User.count()` query.
-- [ ] 2.4 Create `apps/server/src/config/weapons.json` with at least 5 weapons (id, name, damage, fireRate, xpCost — no ammoCapacity); verify the file is valid JSON with at least 2 weapons flagged `defaultUnlock: true`.
-- [ ] 2.5 Create `apps/server/src/config/game.json` with in-run upgrade deltas (move_speed, reload_speed, damage step values per level-up) and rank adjustment constants; verify valid JSON.
-- [ ] 2.6 Create `apps/server/src/config/waves.json` with at least 5 wave entries (startSec, endSec, spawns array with type/count/hpMultiplier); verify valid JSON and that difficulty increases across entries.
+- [x] 2.1 Write the Prisma schema in `packages/db/prisma/schema.prisma` with models: User, PlayerProfile (includes `rank Int @default(0)`), WeaponUnlock, Room (RoomStatus enum: WAITING/IN_RUN/FINISHED; fields: id, maxPlayers, status, createdAt, startedAt — no code or hostId), RunResult (includes rankBefore and rankAfter); verify `prisma validate` passes.
+- [x] 2.2 Create the initial migration with `prisma migrate dev --name init`; verify all tables are created in a local PostgreSQL instance.
+- [x] 2.3 Export the Prisma client from `packages/db/src/index.ts`; verify `apps/server` can import `db` and run a simple `User.count()` query.
+- [x] 2.4 Create `apps/server/src/config/weapons.json` with at least 5 weapons (id, name, damage, fireRate, xpCost — no ammoCapacity); verify the file is valid JSON with at least 2 weapons flagged `defaultUnlock: true`.
+- [x] 2.5 Create `apps/server/src/config/game.json` with in-run upgrade deltas (move_speed, reload_speed, damage step values per level-up) and rank adjustment constants; verify valid JSON.
+- [x] 2.6 Create `apps/server/src/config/waves.json` with at least 5 wave entries (startSec, endSec, spawns array with type/count/hpMultiplier); verify valid JSON and that difficulty increases across entries.
 
 
 

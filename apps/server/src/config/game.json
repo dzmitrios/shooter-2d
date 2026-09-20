@@ -1,0 +1,31 @@
+{
+  "upgrades": {
+    "move_speed": {
+      "delta": 20,
+      "description": "Increases movement speed by 20 units per level"
+    },
+    "reload_speed": {
+      "delta": 0.15,
+      "description": "Reduces reload time by 15% per level"
+    },
+    "damage": {
+      "delta": 0.1,
+      "description": "Increases weapon damage by 10% per level"
+    }
+  },
+  "rank": {
+    "winDelta": 25,
+    "lossDelta": -15,
+    "description": "Rank adjustments based on waves survived relative to room average"
+  },
+  "arena": {
+    "width": 2400,
+    "height": 1600
+  },
+  "player": {
+    "baseSpeed": 160,
+    "baseHp": 100,
+    "baseMaxHp": 100
+  },
+  "xpCurve": [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700]
+}
