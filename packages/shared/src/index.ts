@@ -1,3 +1,36 @@
-// @shooter/shared — protocol types and game constants
-// Populated in task 3.x
-export {};
+export type {
+  GroupMember,
+  MonsterState,
+  MonsterType,
+  PickupState,
+  PickupType,
+  PlayerState,
+  ProjectileState,
+  RunPlayerResult,
+  UpgradeOptionId,
+  WaveConfig,
+  WaveSpawn,
+} from './entities.js';
+
+export type {
+  ClientMessage,
+  ErrorCode,
+  ErrorMessage,
+  GroupCreateMessage,
+  GroupJoinMessage,
+  GroupLeaveMessage,
+  GroupStateMessage,
+  InputMoveMessage,
+  InputShootMessage,
+  PlayerChooseUpgradeMessage,
+  PlayerDiedMessage,
+  PlayerLevelUpMessage,
+  QueueCancelledMessage,
+  QueueJoinMessage,
+  QueueLeaveMessage,
+  QueueStatusMessage,
+  RunEndedMessage,
+  RunStartedMessage,
+  ServerMessage,
+  StateSnapshotMessage,
+} from './messages.js';

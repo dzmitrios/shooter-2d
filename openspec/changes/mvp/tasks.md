@@ -22,10 +22,10 @@
 
 ## 3. Shared Protocol Types
 
-- [ ] 3.1 Define TypeScript interfaces in `packages/shared/src/entities.ts`: `PlayerState`, `MonsterState`, `ProjectileState`, `PickupState` matching the structures in the spec; verify no TypeScript errors.
-- [ ] 3.2 Define all Client→Server WebSocket message types as a discriminated union in `packages/shared/src/messages.ts` (queue:join, queue:leave, group:create, group:join, group:leave, input:move, input:shoot, player:chooseUpgrade); verify no TypeScript errors.
-- [ ] 3.3 Define all Server→Client message types as a discriminated union (queue:status, queue:cancelled, group:state, run:started, state:snapshot, player:levelUp, player:died, run:ended, error); verify no TypeScript errors.
-- [ ] 3.4 Export all types from `packages/shared/src/index.ts`; verify both `apps/server` and `apps/client` can import from `@shooter/shared` without build errors.
+- [x] 3.1 Define TypeScript interfaces in `packages/shared/src/entities.ts`: `PlayerState`, `MonsterState`, `ProjectileState`, `PickupState` matching the structures in the spec; verify no TypeScript errors.
+- [x] 3.2 Define all Client→Server WebSocket message types as a discriminated union in `packages/shared/src/messages.ts` (queue:join, queue:leave, group:create, group:join, group:leave, input:move, input:shoot, player:chooseUpgrade); verify no TypeScript errors.
+- [x] 3.3 Define all Server→Client message types as a discriminated union (queue:status, queue:cancelled, group:state, run:started, state:snapshot, player:levelUp, player:died, run:ended, error); verify no TypeScript errors.
+- [x] 3.4 Export all types from `packages/shared/src/index.ts`; verify both `apps/server` and `apps/client` can import from `@shooter/shared` without build errors.
 
 
 

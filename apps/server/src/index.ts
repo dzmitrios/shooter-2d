@@ -1,4 +1,7 @@
+import type { ClientMessage, ServerMessage } from '@shooter/shared';
 import http from 'node:http';
+
+export type { ClientMessage, ServerMessage };
 
 const PORT = process.env['PORT'] ?? 3000;
 
