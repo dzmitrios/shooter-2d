@@ -92,11 +92,11 @@
 
 ## 9. Drop System
 
-- [ ] 9.1 Implement XP orb spawn on monster death: always create an XP-orb `PickupState` at monster's last position with the monster's configured XP value; additionally roll configured probability for a medkit drop; verify XP orb always appears and medkit appears at the configured rate.
-- [ ] 9.2 Implement XP orb pickup collision: per tick check each living player against each XP orb; on overlap remove orb and add its XP value to the player's in-run XP total; verify XP increments correctly.
-- [ ] 9.3 Implement health pickup collision: per tick check each living player against each health pickup; on overlap remove pickup, apply heal capped at maxHp; verify HP does not exceed maxHp.
-- [ ] 9.4 Implement player-death drop: when a player dies, spawn an XP orb at their last position; verify XP orb appears in snapshot immediately after death.
-- [ ] 9.5 Implement pickup despawn: pickups (XP orbs and medkits) older than configured timeout are removed from sim on each tick; verify no pickups remain after timeout with no player present.
+- [x] 9.1 Implement XP orb spawn on monster death: always create an XP-orb `PickupState` at monster's last position with the monster's configured XP value; additionally roll configured probability for a medkit drop; verify XP orb always appears and medkit appears at the configured rate.
+- [x] 9.2 Implement XP orb pickup collision: per tick check each living player against each XP orb; on overlap remove orb and add its XP value to the player's in-run XP total; verify XP increments correctly.
+- [x] 9.3 Implement health pickup collision: per tick check each living player against each health pickup; on overlap remove pickup, apply heal capped at maxHp; verify HP does not exceed maxHp.
+- [x] 9.4 Implement player-death drop: when a player dies, spawn an XP orb at their last position; verify XP orb appears in snapshot immediately after death.
+- [x] 9.5 Implement pickup despawn: pickups (XP orbs and medkits) older than configured timeout are removed from sim on each tick; verify no pickups remain after timeout with no player present.
 
 
 

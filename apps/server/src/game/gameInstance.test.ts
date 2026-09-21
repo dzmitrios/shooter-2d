@@ -144,9 +144,104 @@ describe('GameInstance', () => {
     assert.equal(snapshot.monsters.length, 0);
     const xp = snapshot.pickups.find((pickup) => pickup.type === 'xp_orb');
     assert.ok(xp);
-    assert.equal(xp.value, gameConfig.combat.monsterXp);
+    assert.equal(xp.value, gameConfig.monsters.melee.xp);
     assert.equal(xp.x, shooter.x);
     assert.equal(xp.y, shooter.y);
+    assert.equal(
+      snapshot.pickups.some((pickup) => pickup.type === 'medkit'),
+      false,
+    );
+  });
+
+  it('drops a medkit at the configured probability using the monster XP value', () => {
+    const { instance } = createInstance([player()], { random: () => 0 });
+    const shooter = instance.getPlayer('u1');
+    assert.ok(shooter);
+    instance.spawnMonster({ type: 'swarm', x: shooter.x, y: shooter.y, hp: 1 });
+    instance.handleShoot('u1', 0);
+
+    const snapshot = instance.getSnapshot();
+    const xp = snapshot.pickups.find((pickup) => pickup.type === 'xp_orb');
+    const medkit = snapshot.pickups.find((pickup) => pickup.type === 'medkit');
+    assert.ok(xp);
+    assert.ok(medkit);
+    assert.equal(xp.value, gameConfig.monsters.swarm.xp);
+    assert.equal(medkit.value, gameConfig.combat.medkitHeal);
+    assert.equal(medkit.x, shooter.x);
+    assert.equal(medkit.y, shooter.y);
+
+    const { instance: noMedkit } = createInstance([player()], {
+      random: () => gameConfig.combat.medkitDropChance,
+    });
+    const other = noMedkit.getPlayer('u1');
+    assert.ok(other);
+    noMedkit.spawnMonster({ type: 'ranged', x: other.x, y: other.y, hp: 1 });
+    noMedkit.handleShoot('u1', 0);
+    const skipped = noMedkit.getSnapshot();
+    assert.equal(
+      skipped.pickups.find((pickup) => pickup.type === 'xp_orb')?.value,
+      gameConfig.monsters.ranged.xp,
+    );
+    assert.equal(
+      skipped.pickups.some((pickup) => pickup.type === 'medkit'),
+      false,
+    );
+  });
+
+  it('collects overlapping XP orbs into in-run XP and does not award XP on kill', () => {
+    const { instance, clock } = createInstance([player()]);
+    const shooter = instance.getPlayer('u1');
+    assert.ok(shooter);
+    instance.spawnMonster({ type: 'melee', x: shooter.x, y: shooter.y, hp: 1 });
+    instance.handleShoot('u1', 0);
+    assert.equal(instance.getPlayer('u1')?.xp, 0);
+    assert.ok(instance.getSnapshot().pickups.some((pickup) => pickup.type === 'xp_orb'));
+
+    clock.advance(50);
+    instance.tick();
+    const after = instance.getPlayer('u1');
+    assert.ok(after);
+    assert.equal(after.xp, gameConfig.monsters.melee.xp);
+    assert.equal(
+      instance.getSnapshot().pickups.some((pickup) => pickup.type === 'xp_orb'),
+      false,
+    );
+  });
+
+  it('heals on medkit pickup and caps HP at maxHp', () => {
+    const { instance, clock } = createInstance([player()], { random: () => 0 });
+    const target = instance.getPlayer('u1');
+    assert.ok(target);
+    instance.spawnMonster({ type: 'melee', x: target.x, y: target.y, hp: 1 });
+
+    clock.advance(50);
+    instance.tick();
+    const damaged = instance.getPlayer('u1');
+    assert.ok(damaged);
+    assert.equal(damaged.hp, gameConfig.player.baseHp - gameConfig.combat.meleeDamage);
+
+    instance.handleShoot('u1', 0);
+    clock.advance(50);
+    instance.tick();
+    const healed = instance.getPlayer('u1');
+    assert.ok(healed);
+    assert.equal(
+      healed.hp,
+      Math.min(
+        gameConfig.player.baseMaxHp,
+        damaged.hp + gameConfig.combat.medkitHeal,
+      ),
+    );
+    assert.equal(
+      instance.getSnapshot().pickups.some((pickup) => pickup.type === 'medkit'),
+      false,
+    );
+
+    instance.spawnMonster({ type: 'swarm', x: healed.x, y: healed.y, hp: 1 });
+    instance.handleShoot('u1', 0);
+    clock.advance(50);
+    instance.tick();
+    assert.equal(instance.getPlayer('u1')?.hp, gameConfig.player.baseMaxHp);
   });
 
   it('damages overlapping players from melee monsters with a per-pair cooldown', () => {
@@ -201,14 +296,22 @@ describe('GameInstance', () => {
     const orb = snapshot.pickups.find((pickup) => pickup.type === 'xp_orb');
     assert.ok(orb);
     assert.equal(orb.value, gameConfig.combat.playerDeathXp);
+    assert.equal(orb.x, dead.x);
+    assert.equal(orb.y, dead.y);
+    assert.equal(
+      snapshot.pickups.some((pickup) => pickup.type === 'medkit'),
+      false,
+    );
 
     instance.handleMove('u1', 1, 0, 99);
     instance.handleShoot('u1', 1);
     clock.advance(50);
     instance.tick();
     assert.equal(instance.getPlayer('u1')?.x, dead.x);
+    assert.equal(instance.getPlayer('u1')?.xp, 0);
     assert.equal(instance.getSnapshot().projectiles.length, 0);
     assert.equal(instance.getPlayer('u2')?.isDead, false);
+    assert.ok(instance.getSnapshot().pickups.some((pickup) => pickup.id === orb.id));
   });
 
   it('ends the run when all players are dead, broadcasts results, and persists rows', async () => {
@@ -486,5 +589,39 @@ describe('GameInstance', () => {
     const laterMaxHp = Math.max(...later.map((monster) => monster.hp));
     assert.ok(later.length > wave1.length || laterMaxHp > wave1MaxHp);
     assert.ok(later.length >= firstCount + secondCount);
+  });
+
+  it('despawns uncollected pickups after the configured timeout', () => {
+    const despawnMs = 200;
+    const { instance, clock } = createInstance([player()], {
+      random: () => 0,
+      config: {
+        ...gameConfig,
+        combat: { ...gameConfig.combat, pickupDespawnMs: despawnMs },
+      },
+    });
+    const shooter = instance.getPlayer('u1');
+    assert.ok(shooter);
+    instance.spawnMonster({ type: 'melee', x: shooter.x + 80, y: shooter.y, hp: 1 });
+    instance.handleShoot('u1', 0);
+
+    let dropped = false;
+    for (let i = 0; i < 20; i += 1) {
+      clock.advance(50);
+      instance.tick();
+      if (instance.getSnapshot().pickups.length > 0) {
+        dropped = true;
+        break;
+      }
+    }
+    assert.equal(dropped, true);
+    assert.ok(instance.getSnapshot().pickups.length >= 1);
+    assert.equal(instance.getPlayer('u1')?.xp, 0);
+
+    clock.advance(despawnMs);
+    instance.tick();
+    assert.equal(instance.getSnapshot().pickups.length, 0);
+    assert.equal(instance.getPlayer('u1')?.xp, 0);
+    assert.equal(instance.getPlayer('u1')?.hp, gameConfig.player.baseHp);
   });
 });

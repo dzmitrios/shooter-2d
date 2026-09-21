@@ -13,6 +13,7 @@ export interface ContactMonsterConfig {
   speed: number;
   damage: number;
   radius: number;
+  xp: number;
 }
 
 export interface RangedMonsterConfig extends ContactMonsterConfig {
@@ -62,8 +63,9 @@ export interface GameConfig {
     meleeCooldownMs: number;
     medkitDropChance: number;
     medkitHeal: number;
-    monsterXp: number;
     playerDeathXp: number;
+    pickupRadius: number;
+    pickupDespawnMs: number;
   };
   monsters: MonstersConfig;
   metaPoints: {

@@ -37,21 +37,24 @@
     "meleeCooldownMs": 500,
     "medkitDropChance": 0.15,
     "medkitHeal": 25,
-    "monsterXp": 10,
-    "playerDeathXp": 40
+    "playerDeathXp": 40,
+    "pickupRadius": 12,
+    "pickupDespawnMs": 10000
   },
   "monsters": {
     "melee": {
       "hp": 40,
       "speed": 90,
       "damage": 10,
-      "radius": 16
+      "radius": 16,
+      "xp": 12
     },
     "ranged": {
       "hp": 28,
       "speed": 70,
       "damage": 12,
       "radius": 16,
+      "xp": 15,
       "minRange": 180,
       "maxRange": 360,
       "fireRange": 400,
@@ -63,7 +66,8 @@
       "hp": 12,
       "speed": 160,
       "damage": 6,
-      "radius": 10
+      "radius": 10,
+      "xp": 6
     },
     "spawnInset": 24,
     "clusterSpread": 36

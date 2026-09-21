@@ -72,6 +72,11 @@ interface SimProjectile {
   radius: number;
 }
 
+interface SimPickup {
+  state: PickupState;
+  spawnedAt: number;
+}
+
 const ZERO_UPGRADES: PermanentUpgrades = {
   move_speed: 0,
   reload_speed: 0,
@@ -95,7 +100,7 @@ export class GameInstance {
   private readonly simPlayers = new Map<string, SimPlayer>();
   private readonly monsters: SimMonster[] = [];
   private readonly projectiles: SimProjectile[] = [];
-  private readonly pickups: PickupState[] = [];
+  private readonly pickups: SimPickup[] = [];
   private readonly meleeHits = new Map<string, number>();
   private readonly diedBroadcast = new Set<string>();
 
@@ -232,7 +237,7 @@ export class GameInstance {
       players: [...this.simPlayers.values()].map((player) => clonePlayer(player.state)),
       monsters: this.monsters.map((monster) => ({ ...monster.state })),
       projectiles: this.projectiles.map((projectile) => ({ ...projectile.state })),
-      pickups: this.pickups.map((pickup) => ({ ...pickup })),
+      pickups: this.pickups.map((pickup) => ({ ...pickup.state })),
     };
   }
 
@@ -254,6 +259,8 @@ export class GameInstance {
     this.resolveProjectileHits();
     this.resolveContactHits(now);
     this.processDeaths();
+    this.resolvePickupCollisions();
+    this.despawnPickups(now);
     this.dispatchSnapshot();
 
     if (this.allPlayersDead()) {
@@ -462,7 +469,7 @@ export class GameInstance {
         if (owner) {
           owner.kills += 1;
         }
-        this.spawnMonsterDrops(monster.state.x, monster.state.y);
+        this.spawnMonsterDrops(monster.state);
         this.monsters.splice(m, 1);
       }
       return true;
@@ -545,21 +552,76 @@ export class GameInstance {
     }
   }
 
-  private spawnMonsterDrops(x: number, y: number): void {
-    this.spawnPickup('xp_orb', x, y, this.config.combat.monsterXp);
+  private spawnMonsterDrops(monster: MonsterState): void {
+    const xp = getMonsterConfig(monster.type, this.config).xp;
+    this.spawnPickup('xp_orb', monster.x, monster.y, xp);
     if (this.random() < this.config.combat.medkitDropChance) {
-      this.spawnPickup('medkit', x, y, this.config.combat.medkitHeal);
+      this.spawnPickup('medkit', monster.x, monster.y, this.config.combat.medkitHeal);
     }
   }
 
   private spawnPickup(type: PickupState['type'], x: number, y: number, value: number): void {
     this.pickups.push({
-      id: this.nextId('pk'),
-      type,
-      x,
-      y,
-      value,
+      spawnedAt: this.now(),
+      state: {
+        id: this.nextId('pk'),
+        type,
+        x,
+        y,
+        value,
+      },
     });
+  }
+
+  private resolvePickupCollisions(): void {
+    const pickupRadius = this.config.combat.pickupRadius;
+    for (let i = this.pickups.length - 1; i >= 0; i -= 1) {
+      const pickup = this.pickups[i];
+      if (!pickup) {
+        continue;
+      }
+      for (const player of this.simPlayers.values()) {
+        if (player.state.isDead) {
+          continue;
+        }
+        if (
+          !circlesOverlap(
+            pickup.state.x,
+            pickup.state.y,
+            pickupRadius,
+            player.state.x,
+            player.state.y,
+            player.radius,
+          )
+        ) {
+          continue;
+        }
+        this.applyPickup(player, pickup.state);
+        this.pickups.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  private applyPickup(player: SimPlayer, pickup: PickupState): void {
+    if (pickup.type === 'xp_orb') {
+      player.state.xp += pickup.value;
+      return;
+    }
+    player.state.hp = Math.min(player.state.maxHp, player.state.hp + pickup.value);
+  }
+
+  private despawnPickups(now: number): void {
+    const timeout = this.config.combat.pickupDespawnMs;
+    for (let i = this.pickups.length - 1; i >= 0; i -= 1) {
+      const pickup = this.pickups[i];
+      if (!pickup) {
+        continue;
+      }
+      if (now - pickup.spawnedAt >= timeout) {
+        this.pickups.splice(i, 1);
+      }
+    }
   }
 
   private dispatchSnapshot(): void {
