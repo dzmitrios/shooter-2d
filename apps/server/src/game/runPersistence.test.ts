@@ -56,6 +56,10 @@ describe('persistRunToDb', { skip: !hasDb }, () => {
 
       const finished = await db.room.findUniqueOrThrow({ where: { id: room.id } });
       assert.equal(finished.status, 'FINISHED');
+      assert.equal('xp' in result, false);
+      assert.equal('level' in result, false);
+      assert.equal('xp' in profile, false);
+      assert.equal('level' in profile, false);
     } finally {
       await db.runResult.deleteMany({ where: { roomId: room.id } });
       await db.room.delete({ where: { id: room.id } });

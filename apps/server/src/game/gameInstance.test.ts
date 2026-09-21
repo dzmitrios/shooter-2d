@@ -192,9 +192,12 @@ describe('GameInstance', () => {
     const { instance, clock } = createInstance([player()]);
     const shooter = instance.getPlayer('u1');
     assert.ok(shooter);
+    assert.equal(shooter.xp, 0);
+    assert.equal(shooter.level, 1);
     instance.spawnMonster({ type: 'melee', x: shooter.x, y: shooter.y, hp: 1 });
     instance.handleShoot('u1', 0);
     assert.equal(instance.getPlayer('u1')?.xp, 0);
+    assert.equal(instance.getPlayer('u1')?.level, 1);
     assert.ok(instance.getSnapshot().pickups.some((pickup) => pickup.type === 'xp_orb'));
 
     clock.advance(50);
@@ -202,6 +205,7 @@ describe('GameInstance', () => {
     const after = instance.getPlayer('u1');
     assert.ok(after);
     assert.equal(after.xp, gameConfig.monsters.melee.xp);
+    assert.equal(after.level, 1);
     assert.equal(
       instance.getSnapshot().pickups.some((pickup) => pickup.type === 'xp_orb'),
       false,
@@ -624,4 +628,148 @@ describe('GameInstance', () => {
     assert.equal(instance.getPlayer('u1')?.xp, 0);
     assert.equal(instance.getPlayer('u1')?.hp, gameConfig.player.baseHp);
   });
+
+  it('levels up when XP reaches the curve threshold and broadcasts the three fixed choices', () => {
+    const { instance, clock, messages } = createProgressionInstance([
+      player(),
+      player({ userId: 'u2', username: 'bob', rank: 80 }),
+    ]);
+    collectMeleeOrb(instance, clock, 'u1');
+
+    const after = instance.getPlayer('u1');
+    assert.ok(after);
+    assert.equal(after.xp, 10);
+    assert.equal(after.level, 2);
+    assert.equal(instance.getPlayer('u2')?.level, 1);
+
+    const levelUps = messages.filter((message) => message.type === 'player:levelUp');
+    assert.equal(levelUps.length, 2);
+    assert.ok(
+      levelUps.every(
+        (message) =>
+          message.type === 'player:levelUp' &&
+          message.playerId === 'u1' &&
+          message.choices[0] === 'move_speed' &&
+          message.choices[1] === 'reload_speed' &&
+          message.choices[2] === 'damage' &&
+          message.choices.length === 3,
+      ),
+    );
+  });
+
+  it('applies chooseUpgrade deltas and ignores invalid or unoffered options', () => {
+    const { instance, clock } = createProgressionInstance([player()]);
+    const before = instance.getCombatStats('u1');
+    assert.ok(before);
+
+    instance.handleChooseUpgrade('u1', 'move_speed');
+    instance.handleChooseUpgrade('u1', 'damage');
+    assert.deepEqual(instance.getCombatStats('u1'), before);
+
+    collectMeleeOrb(instance, clock, 'u1');
+    instance.handleChooseUpgrade('u1', 'nuke');
+    assert.deepEqual(instance.getCombatStats('u1'), before);
+
+    instance.handleChooseUpgrade('u1', 'move_speed');
+    const afterMove = instance.getCombatStats('u1');
+    assert.ok(afterMove);
+    assert.equal(afterMove.speed, before.speed + gameConfig.upgrades.move_speed.delta);
+    assert.equal(afterMove.damage, before.damage);
+    assert.equal(afterMove.reloadMs, before.reloadMs);
+
+    instance.handleMove('u1', 1, 0, 1);
+    const posBefore = instance.getPlayer('u1');
+    assert.ok(posBefore);
+    clock.advance(50);
+    instance.tick();
+    const posAfter = instance.getPlayer('u1');
+    assert.ok(posAfter);
+    assert.ok(Math.abs(posAfter.x - posBefore.x - afterMove.speed * 0.05) < 1e-6);
+
+    instance.handleChooseUpgrade('u1', 'damage');
+    assert.deepEqual(instance.getCombatStats('u1'), afterMove);
+
+    const { instance: damageRun, clock: damageClock } = createProgressionInstance([player()]);
+    collectMeleeOrb(damageRun, damageClock, 'u1');
+    damageRun.handleChooseUpgrade('u1', 'damage');
+    damageRun.handleShoot('u1', 0);
+    const projectile = damageRun.getSnapshot().projectiles[0];
+    assert.ok(projectile);
+    assert.equal(projectile.damage, 20 * (1 + gameConfig.upgrades.damage.delta));
+
+    const { instance: reloadRun, clock: reloadClock } = createProgressionInstance([player()]);
+    const reloadBefore = reloadRun.getCombatStats('u1');
+    assert.ok(reloadBefore);
+    collectMeleeOrb(reloadRun, reloadClock, 'u1');
+    reloadRun.handleChooseUpgrade('u1', 'reload_speed');
+    const reloadAfter = reloadRun.getCombatStats('u1');
+    assert.ok(reloadAfter);
+    assert.equal(
+      reloadAfter.reloadMs,
+      reloadBefore.reloadMs * (1 - gameConfig.upgrades.reload_speed.delta),
+    );
+    assert.equal(reloadAfter.speed, reloadBefore.speed);
+    assert.equal(reloadAfter.damage, reloadBefore.damage);
+  });
+
+  it('does not persist in-run xp or level when the run ends', async () => {
+    const { instance, clock, persisted } = createProgressionInstance([player({ rank: 40 })]);
+    collectMeleeOrb(instance, clock, 'u1');
+    assert.equal(instance.getPlayer('u1')?.xp, 10);
+    assert.equal(instance.getPlayer('u1')?.level, 2);
+
+    const target = instance.getPlayer('u1');
+    assert.ok(target);
+    instance.spawnMonster({ type: 'melee', x: target.x, y: target.y, hp: 999 });
+    const hitsNeeded = Math.ceil(gameConfig.player.baseHp / gameConfig.combat.meleeDamage);
+    for (let i = 0; i < hitsNeeded; i += 1) {
+      clock.advance(gameConfig.combat.meleeCooldownMs);
+      instance.tick();
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.equal(persisted.length, 1);
+    const rows = persisted[0];
+    assert.ok(rows);
+    assert.equal(rows.length, 1);
+    const row = rows[0];
+    assert.ok(row);
+    assert.equal('xp' in row, false);
+    assert.equal('level' in row, false);
+    assert.deepEqual(Object.keys(row).sort(), [
+      'kills',
+      'metaPointsEarned',
+      'rankAfter',
+      'rankBefore',
+      'survivedSec',
+      'userId',
+      'wavesSurvived',
+    ]);
+  });
 });
+
+function createProgressionInstance(players: RoomPlayer[]) {
+  return createInstance(players, {
+    config: {
+      ...gameConfig,
+      xpCurve: [0, 10, 10_000],
+      monsters: {
+        ...gameConfig.monsters,
+        melee: { ...gameConfig.monsters.melee, xp: 10 },
+      },
+    },
+  });
+}
+
+function collectMeleeOrb(
+  instance: GameInstance,
+  clock: { advance(ms: number): void },
+  userId: string,
+): void {
+  const shooter = instance.getPlayer(userId);
+  assert.ok(shooter);
+  instance.spawnMonster({ type: 'melee', x: shooter.x, y: shooter.y, hp: 1 });
+  instance.handleShoot(userId, 0);
+  clock.advance(50);
+  instance.tick();
+}

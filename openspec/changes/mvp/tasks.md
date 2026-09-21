@@ -102,10 +102,10 @@
 
 ## 10. In-Run Player Progression
 
-- [ ] 10.1 Track per-player `xp` and `level` in `PlayerState` (in-memory only); XP is added when a player collects an XP orb (handled in section 9); verify XP increments on orb collection and not on kill.
-- [ ] 10.2 Detect level-up threshold: after XP changes, compare against configured XP curve; if threshold met, increment level and broadcast `{ "type": "player:levelUp", "playerId": "<id>", "choices": ["move_speed", "reload_speed", "damage"] }` to the room; verify all three options are always present.
-- [ ] 10.3 Implement `player:chooseUpgrade` handler: accept `move_speed`, `reload_speed`, or `damage`; apply the corresponding stat delta (configurable per level); clear pending offer; verify invalid optionId is rejected and each valid option correctly modifies the stat.
-- [ ] 10.4 Verify progression is not persisted: confirm no XP/level data is written to DB at any point during or after the run.
+- [x] 10.1 Track per-player `xp` and `level` in `PlayerState` (in-memory only); XP is added when a player collects an XP orb (handled in section 9); verify XP increments on orb collection and not on kill.
+- [x] 10.2 Detect level-up threshold: after XP changes, compare against configured XP curve; if threshold met, increment level and broadcast `{ "type": "player:levelUp", "playerId": "<id>", "choices": ["move_speed", "reload_speed", "damage"] }` to the room; verify all three options are always present.
+- [x] 10.3 Implement `player:chooseUpgrade` handler: accept `move_speed`, `reload_speed`, or `damage`; apply the corresponding stat delta (configurable per level); clear pending offer; verify invalid optionId is rejected and each valid option correctly modifies the stat.
+- [x] 10.4 Verify progression is not persisted: confirm no XP/level data is written to DB at any point during or after the run.
 
 
 

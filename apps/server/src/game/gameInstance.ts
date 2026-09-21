@@ -2,11 +2,13 @@ import type {
   MonsterState,
   MonsterType,
   PickupState,
+  PlayerLevelUpMessage,
   PlayerState,
   ProjectileState,
   RunPlayerResult,
   ServerMessage,
   StateSnapshotMessage,
+  UpgradeOptionId,
   WaveConfig,
 } from '@shooter/shared';
 import {
@@ -51,6 +53,11 @@ interface SimPlayer {
   state: PlayerState;
   speed: number;
   damage: number;
+  reloadMs: number;
+  baseDamage: number;
+  baseReloadMs: number;
+  upgrades: PermanentUpgrades;
+  pendingUpgrades: number;
   radius: number;
   moveDx: number;
   moveDy: number;
@@ -82,6 +89,14 @@ const ZERO_UPGRADES: PermanentUpgrades = {
   reload_speed: 0,
   damage: 0,
 };
+
+const LEVEL_UP_CHOICES: PlayerLevelUpMessage['choices'] = [
+  'move_speed',
+  'reload_speed',
+  'damage',
+];
+
+const UPGRADE_OPTION_IDS = new Set<string>(LEVEL_UP_CHOICES);
 
 export class GameInstance {
   readonly disconnected = new Set<string>();
@@ -195,6 +210,25 @@ export class GameInstance {
     this.resolveProjectileHits();
   }
 
+  handleChooseUpgrade(userId: string, optionId: string): void {
+    const player = this.simPlayers.get(userId);
+    if (!player || player.pendingUpgrades <= 0 || !UPGRADE_OPTION_IDS.has(optionId)) {
+      return;
+    }
+    const option = optionId as UpgradeOptionId;
+    player.upgrades[option] += 1;
+    player.pendingUpgrades -= 1;
+    this.applyCombatStats(player);
+  }
+
+  getCombatStats(userId: string): { speed: number; damage: number; reloadMs: number } | undefined {
+    const player = this.simPlayers.get(userId);
+    if (!player) {
+      return undefined;
+    }
+    return { speed: player.speed, damage: player.damage, reloadMs: player.reloadMs };
+  }
+
   spawnMonster(input: {
     type?: MonsterType;
     x: number;
@@ -280,12 +314,7 @@ export class GameInstance {
       const weapon =
         weaponOverrides?.find((item) => item.id === player.weaponId) ??
         getWeapon(player.weaponId);
-      const baseDamage = weapon?.damage ?? 10;
-      const speed =
-        this.config.player.baseSpeed + this.upgradeDeltas.move_speed.delta * upgrades.move_speed;
-      const damage = baseDamage * (1 + this.upgradeDeltas.damage.delta * upgrades.damage);
-
-      this.simPlayers.set(player.userId, {
+      const simPlayer: SimPlayer = {
         state: {
           id: player.userId,
           userId: player.userId,
@@ -300,16 +329,34 @@ export class GameInstance {
           isDead: false,
           seq: 0,
         },
-        speed,
-        damage,
+        speed: this.config.player.baseSpeed,
+        damage: weapon?.damage ?? 10,
+        reloadMs: 1000 / Math.max(weapon?.fireRate ?? 1, 0.01),
+        baseDamage: weapon?.damage ?? 10,
+        baseReloadMs: 1000 / Math.max(weapon?.fireRate ?? 1, 0.01),
+        upgrades,
+        pendingUpgrades: 0,
         radius: this.config.player.radius,
         moveDx: 0,
         moveDy: 0,
         rank: player.rank,
         kills: 0,
         diedAtSec: null,
-      });
+      };
+      this.applyCombatStats(simPlayer);
+      this.simPlayers.set(player.userId, simPlayer);
     });
+  }
+
+  private applyCombatStats(player: SimPlayer): void {
+    player.speed =
+      this.config.player.baseSpeed +
+      this.upgradeDeltas.move_speed.delta * player.upgrades.move_speed;
+    player.damage =
+      player.baseDamage * (1 + this.upgradeDeltas.damage.delta * player.upgrades.damage);
+    player.reloadMs =
+      player.baseReloadMs *
+      Math.max(0.1, 1 - this.upgradeDeltas.reload_speed.delta * player.upgrades.reload_speed);
   }
 
   private stepPlayers(dt: number): void {
@@ -606,9 +653,27 @@ export class GameInstance {
   private applyPickup(player: SimPlayer, pickup: PickupState): void {
     if (pickup.type === 'xp_orb') {
       player.state.xp += pickup.value;
+      this.checkLevelUp(player);
       return;
     }
     player.state.hp = Math.min(player.state.maxHp, player.state.hp + pickup.value);
+  }
+
+  private checkLevelUp(player: SimPlayer): void {
+    const curve = this.config.xpCurve;
+    while (player.state.level < curve.length) {
+      const threshold = curve[player.state.level];
+      if (threshold === undefined || player.state.xp < threshold) {
+        break;
+      }
+      player.state.level += 1;
+      player.pendingUpgrades += 1;
+      this.broadcastAll({
+        type: 'player:levelUp',
+        playerId: player.state.id,
+        choices: LEVEL_UP_CHOICES,
+      });
+    }
   }
 
   private despawnPickups(now: number): void {

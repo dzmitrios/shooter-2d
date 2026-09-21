@@ -51,6 +51,7 @@ export async function handleMessage(
       handleInputShoot(ctx, session, parsed);
       return;
     case 'player:chooseUpgrade':
+      handleChooseUpgrade(ctx, session, parsed);
       return;
     default:
       sendError(session.socket, 'UNKNOWN_MESSAGE_TYPE');
@@ -251,6 +252,21 @@ function handleInputShoot(ctx: GameContext, session: PlayerSession, raw: unknown
     return;
   }
   instance.handleShoot(session.userId, (raw as { angle: number }).angle);
+}
+
+function handleChooseUpgrade(ctx: GameContext, session: PlayerSession, raw: unknown): void {
+  const instance = session.roomId ? ctx.rooms.getRoom(session.roomId) : undefined;
+  if (!instance) {
+    return;
+  }
+  if (
+    typeof raw !== 'object' ||
+    raw === null ||
+    typeof (raw as { optionId?: unknown }).optionId !== 'string'
+  ) {
+    return;
+  }
+  instance.handleChooseUpgrade(session.userId, (raw as { optionId: string }).optionId);
 }
 
 function handleQueueLeave(ctx: GameContext, session: PlayerSession): void {
