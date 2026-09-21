@@ -16,7 +16,7 @@ import { MemoryRoomStore } from './roomStore.js';
 process.env['JWT_SECRET'] ??= 'test-secret';
 
 interface TestServer {
-  port: number;
+  url: string;
   ctx: ReturnType<typeof createGameContext>;
   close: () => Promise<void>;
   sockets: WebSocket[];
@@ -45,12 +45,11 @@ async function startServer(
   });
   attachWebSocket(httpServer, ctx);
   await new Promise<void>((resolve) => {
-    httpServer.listen(0, '127.0.0.1', resolve);
+    httpServer.listen(0, resolve);
   });
-  const port = (httpServer.address() as AddressInfo).port;
   const sockets: WebSocket[] = [];
   const testServer: TestServer = {
-    port,
+    url: wsUrl(httpServer.address() as AddressInfo),
     ctx,
     sockets,
     close: async () => {
@@ -75,13 +74,27 @@ async function startServer(
   return testServer;
 }
 
+function wsUrl(addr: AddressInfo): string {
+  const ipv6 = addr.family === 'IPv6';
+  let host = addr.address;
+  if (ipv6) {
+    if (host === '::') {
+      host = '::1';
+    }
+    host = `[${host}]`;
+  } else if (host === '0.0.0.0') {
+    host = '127.0.0.1';
+  }
+  return `ws://${host}:${addr.port}`;
+}
+
 function connect(server: TestServer, userId: string, useHeader = false): Promise<WebSocket> {
   const token = signToken(userId);
   const ws = useHeader
-    ? new WebSocket(`ws://127.0.0.1:${server.port}`, {
+    ? new WebSocket(server.url, {
         headers: { Authorization: `Bearer ${token}` },
       })
-    : new WebSocket(`ws://127.0.0.1:${server.port}/?token=${encodeURIComponent(token)}`);
+    : new WebSocket(`${server.url}/?token=${encodeURIComponent(token)}`);
   ws.on('error', () => {});
   server.sockets.push(ws);
   return new Promise((resolve, reject) => {
@@ -118,7 +131,7 @@ describe('WebSocket gateway', () => {
     const ws = await connect(server, 'user-valid');
     assert.equal(ws.readyState, WebSocket.OPEN);
 
-    const rejected = new WebSocket(`ws://127.0.0.1:${server.port}`);
+    const rejected = new WebSocket(server.url);
     rejected.on('error', () => {});
     server.sockets.push(rejected);
     const response = await once(rejected, 'unexpected-response');

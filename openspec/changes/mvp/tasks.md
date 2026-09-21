@@ -118,10 +118,10 @@
 
 ## 12. Client: Network Layer
 
-- [ ] 12.1 Implement WebSocket client in `apps/client/src/net/wsClient.ts`: connect with JWT, reconnect on close, parse incoming JSON messages and emit to event bus; verify connection and message receipt with the running server.
-- [ ] 12.2 Implement typed message senders for all Client→Server message types using shared types from `@shooter/shared`; verify TypeScript types are enforced.
-- [ ] 12.3 Implement client-side prediction: on `input:move` immediately update local player position and push to a ring buffer; on `state:snapshot` find the acknowledged `seq`, correct position, replay buffered inputs; verify smooth local movement with simulated 100 ms latency.
-- [ ] 12.4 Implement remote entity interpolation: maintain two snapshot buffers (prev and next); on each render frame interpolate entity positions based on elapsed time; verify remote entities move smoothly between snapshot arrivals.
+- [x] 12.1 Implement WebSocket client in `apps/client/src/net/wsClient.ts`: connect with JWT, reconnect on close, parse incoming JSON messages and emit to event bus; verify connection and message receipt with the running server.
+- [x] 12.2 Implement typed message senders for all Client→Server message types using shared types from `@shooter/shared`; verify TypeScript types are enforced.
+- [x] 12.3 Implement client-side prediction: on `input:move` immediately update local player position and push to a ring buffer; on `state:snapshot` find the acknowledged `seq`, correct position, replay buffered inputs; verify smooth local movement with simulated 100 ms latency.
+- [x] 12.4 Implement remote entity interpolation: maintain two snapshot buffers (prev and next); on each render frame interpolate entity positions based on elapsed time; verify remote entities move smoothly between snapshot arrivals.
 
 
 
