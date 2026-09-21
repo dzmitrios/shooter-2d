@@ -28,6 +28,10 @@
     "baseMaxHp": 100,
     "radius": 16
   },
+  "inputRateLimit": {
+    "maxPerSecond": 80,
+    "violationThreshold": 5
+  },
   "combat": {
     "tickMs": 50,
     "projectileSpeed": 500,

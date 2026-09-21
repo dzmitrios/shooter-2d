@@ -7,8 +7,9 @@ import type { ServerMessage } from '@shooter/shared';
 import { WebSocket } from 'ws';
 import { createApp } from '../rest/app.js';
 import { signToken } from '../rest/jwt.js';
-import { createGameContext } from './context.js';
+import { createGameContext, type GameContextOptions } from './context.js';
 import { attachWebSocket } from './gateway.js';
+import { InputRateLimiter } from './inputRateLimiter.js';
 import { MemoryPlayerDirectory } from './playerDirectory.js';
 import { MemoryRoomStore } from './roomStore.js';
 
@@ -30,13 +31,17 @@ afterEach(async () => {
   }
 });
 
-async function startServer(directory?: MemoryPlayerDirectory): Promise<TestServer> {
+async function startServer(
+  directory?: MemoryPlayerDirectory,
+  extra: Pick<GameContextOptions, 'inputRateLimiter'> = {},
+): Promise<TestServer> {
   const players = directory ?? new MemoryPlayerDirectory();
   const httpServer = http.createServer(createApp());
   const ctx = createGameContext({
     players,
     roomStore: new MemoryRoomStore(),
     persistRun: async () => {},
+    ...extra,
   });
   attachWebSocket(httpServer, ctx);
   await new Promise<void>((resolve) => {
@@ -356,5 +361,79 @@ describe('WebSocket gateway', () => {
       return;
     }
     assert.ok(message.players.some((entry) => entry.userId === 'runner'));
+  });
+
+  it('silently drops excess input:* messages over the per-second limit', async () => {
+    const directory = new MemoryPlayerDirectory();
+    directory.seed('spammer', { username: 'spammer', weapons: ['pistol'] });
+    const limiter = new InputRateLimiter({ maxPerSecond: 3, violationThreshold: 10 }, () => 0);
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args.map(String).join(' '));
+    };
+
+    try {
+      const server = await startServer(directory, { inputRateLimiter: limiter });
+      const ws = await connect(server, 'spammer');
+      sendJson(ws, { type: 'queue:join', weaponId: 'pistol' });
+      await waitFor(ws, 'queue:status');
+      await server.ctx.matchmaking.tick();
+      const waiting = server.ctx.matchmaking.getWaitingRooms()[0];
+      assert.ok(waiting);
+      const instance = server.ctx.rooms.createRoom(waiting.roomId, waiting.players, 1);
+      const session = server.ctx.sessions.getByUserId('spammer');
+      assert.ok(session);
+      session.roomId = waiting.roomId;
+
+      for (let seq = 1; seq <= 8; seq++) {
+        sendJson(ws, { type: 'input:move', dx: 1, dy: 0, seq });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const player = instance.getPlayer('spammer');
+      assert.ok(player);
+      assert.equal(player.seq, 3);
+      assert.equal(ws.readyState, WebSocket.OPEN);
+      assert.ok(warnings.some((line) => line.includes('input rate limit exceeded')));
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
+  it('closes the connection after repeated rate-limit violations and removes the player from the room', async () => {
+    let now = 0;
+    const directory = new MemoryPlayerDirectory();
+    directory.seed('kicked', { username: 'kicked', weapons: ['pistol'] });
+    const limiter = new InputRateLimiter({ maxPerSecond: 2, violationThreshold: 2 }, () => now);
+    const server = await startServer(directory, { inputRateLimiter: limiter });
+    const ws = await connect(server, 'kicked');
+    sendJson(ws, { type: 'queue:join', weaponId: 'pistol' });
+    await waitFor(ws, 'queue:status');
+    await server.ctx.matchmaking.tick();
+    const waiting = server.ctx.matchmaking.getWaitingRooms()[0];
+    assert.ok(waiting);
+    const instance = server.ctx.rooms.createRoom(waiting.roomId, waiting.players, 1);
+    const session = server.ctx.sessions.getByUserId('kicked');
+    assert.ok(session);
+    session.roomId = waiting.roomId;
+
+    for (let seq = 1; seq <= 4; seq++) {
+      sendJson(ws, { type: 'input:move', dx: 1, dy: 0, seq });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(ws.readyState, WebSocket.OPEN);
+
+    now = 1000;
+    const closed = once(ws, 'close');
+    for (let seq = 5; seq <= 8; seq++) {
+      sendJson(ws, { type: 'input:move', dx: 1, dy: 0, seq });
+    }
+    await closed;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    assert.notEqual(ws.readyState, WebSocket.OPEN);
+    assert.equal(instance.disconnected.has('kicked'), true);
+    assert.equal(server.ctx.sessions.getByUserId('kicked'), undefined);
   });
 });

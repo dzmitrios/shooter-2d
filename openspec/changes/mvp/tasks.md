@@ -111,8 +111,8 @@
 
 ## 11. Input Rate Limiting
 
-- [ ] 11.1 Track `input:*` message count per WebSocket connection per second; if count exceeds configured limit, drop excess messages for that tick; log a warning; verify excess inputs are silently dropped in a test with rapid sends.
-- [ ] 11.2 Close connection after repeated rate-limit violations (configurable threshold); verify connection is closed and the player is removed from the room gracefully.
+- [x] 11.1 Track `input:*` message count per WebSocket connection per second; if count exceeds configured limit, drop excess messages for that tick; log a warning; verify excess inputs are silently dropped in a test with rapid sends.
+- [x] 11.2 Close connection after repeated rate-limit violations (configurable threshold); verify connection is closed and the player is removed from the room gracefully.
 
 
 

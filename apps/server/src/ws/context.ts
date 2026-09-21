@@ -1,7 +1,9 @@
 import type { WaveConfig } from '@shooter/shared';
+import { gameConfig } from '../config/index.js';
 import waves from '../config/waves.json' with { type: 'json' };
 import { persistRunToDb, type PersistRun } from '../game/runPersistence.js';
 import { GroupRegistry } from './groupRegistry.js';
+import { InputRateLimiter } from './inputRateLimiter.js';
 import { MatchmakingQueue } from './matchmaking.js';
 import {
   prismaPlayerDirectory,
@@ -17,6 +19,7 @@ export interface GameContext {
   rooms: RoomManager;
   matchmaking: MatchmakingQueue;
   players: PlayerDirectory;
+  inputRateLimiter: InputRateLimiter;
 }
 
 export interface GameContextOptions {
@@ -25,6 +28,7 @@ export interface GameContextOptions {
   now?: () => number;
   waveConfig?: WaveConfig[];
   persistRun?: PersistRun;
+  inputRateLimiter?: InputRateLimiter;
 }
 
 export function createGameContext(options: GameContextOptions = {}): GameContext {
@@ -70,5 +74,8 @@ export function createGameContext(options: GameContextOptions = {}): GameContext
     },
   });
 
-  return { sessions, groups, rooms, matchmaking, players };
+  const inputRateLimiter =
+    options.inputRateLimiter ?? new InputRateLimiter(gameConfig.inputRateLimit);
+
+  return { sessions, groups, rooms, matchmaking, players, inputRateLimiter };
 }

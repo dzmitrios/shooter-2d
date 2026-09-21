@@ -33,6 +33,11 @@ export interface MonstersConfig {
   clusterSpread: number;
 }
 
+export interface InputRateLimitConfig {
+  maxPerSecond: number;
+  violationThreshold: number;
+}
+
 export interface GameConfig {
   upgrades: {
     move_speed: UpgradeStep;
@@ -44,6 +49,7 @@ export interface GameConfig {
     lossDelta: number;
     description: string;
   };
+  inputRateLimit: InputRateLimitConfig;
   arena: {
     width: number;
     height: number;

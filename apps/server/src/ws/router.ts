@@ -1,4 +1,5 @@
 import type { GroupStateMessage } from '@shooter/shared';
+import { WebSocket } from 'ws';
 import type { GameContext } from './context.js';
 import { GroupError } from './groupRegistry.js';
 import { averageSlotRank, type QueueSlotPlayer } from './matchmaking.js';
@@ -10,6 +11,10 @@ export async function handleMessage(
   session: PlayerSession,
   raw: string,
 ): Promise<void> {
+  if (session.socket.readyState !== WebSocket.OPEN) {
+    return;
+  }
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -28,6 +33,21 @@ export async function handleMessage(
   }
 
   const type = (parsed as { type: string }).type;
+  if (type.startsWith('input:')) {
+    const decision = ctx.inputRateLimiter.consume(session.userId);
+    if (decision.action !== 'allow') {
+      if (decision.warn) {
+        console.warn(
+          `input rate limit exceeded for user ${session.userId} (${type})`,
+        );
+      }
+      if (decision.action === 'kick') {
+        kickRateLimited(ctx, session);
+      }
+      return;
+    }
+  }
+
   switch (type) {
     case 'group:create':
       handleGroupCreate(ctx, session);
@@ -291,6 +311,7 @@ function handleQueueLeave(ctx: GameContext, session: PlayerSession): void {
 }
 
 export function handleDisconnect(ctx: GameContext, session: PlayerSession): void {
+  ctx.inputRateLimiter.forget(session.userId);
   if (session.roomId) {
     const instance = ctx.rooms.getRoom(session.roomId);
     if (instance) {
@@ -362,6 +383,17 @@ function broadcastGroupState(
       memberSession.groupId = group.id;
       send(memberSession.socket, message);
     }
+  }
+}
+
+function kickRateLimited(ctx: GameContext, session: PlayerSession): void {
+  ctx.sessions.remove(session.socket);
+  handleDisconnect(ctx, session);
+  if (
+    session.socket.readyState === WebSocket.OPEN ||
+    session.socket.readyState === WebSocket.CONNECTING
+  ) {
+    session.socket.close();
   }
 }
 
