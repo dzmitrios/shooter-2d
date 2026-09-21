@@ -41,8 +41,8 @@
 
 ## 5. Profile and Meta-Progression REST API
 
-- [ ] 5.1 Implement `GET /profile/me`: return PlayerProfile (including rank) + WeaponUnlock list for the authenticated user; verify correct JSON shape.
-- [ ] 5.2 Implement `POST /profile/weapons/unlock`: validate weaponId against `weapons.json`, check and deduct metaCurrency, insert WeaponUnlock; verify 200 on success, 409 on already-owned, 402 on insufficient funds, 400 on unknown weaponId.
+- [x] 5.1 Implement `GET /profile/me`: return PlayerProfile (including rank) + WeaponUnlock list for the authenticated user; verify correct JSON shape.
+- [x] 5.2 Implement `POST /profile/weapons/unlock`: validate weaponId against `weapons.json`, check and deduct metaCurrency, insert WeaponUnlock; verify 200 on success, 409 on already-owned, 402 on insufficient funds, 400 on unknown weaponId.
 
 
 
