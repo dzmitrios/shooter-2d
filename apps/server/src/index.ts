@@ -1,14 +1,16 @@
-import type { ClientMessage, ServerMessage } from '@shooter/shared';
 import http from 'node:http';
+import { createApp } from './rest/app.js';
+import { getJwtSecret } from './rest/jwt.js';
 
-export type { ClientMessage, ServerMessage };
+export type { ClientMessage, ServerMessage } from '@shooter/shared';
 
-const PORT = process.env['PORT'] ?? 3000;
+const PORT = Number(process.env['PORT'] ?? 3000);
 
-const server = http.createServer((_req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('shooter-2d server\n');
-});
+// Fail fast if JWT_SECRET is unset, rather than 500ing on the first auth request.
+getJwtSecret();
+
+const app = createApp();
+const server = http.createServer(app);
 
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);

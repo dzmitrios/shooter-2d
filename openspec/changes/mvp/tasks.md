@@ -31,11 +31,11 @@
 
 ## 4. Authentication (REST API)
 
-- [ ] 4.1 Set up Express in `apps/server/src/rest/`; add JWT validation middleware using `jsonwebtoken` (inline or via `express-jwt`); load `JWT_SECRET` from environment; verify server starts without error.
-- [ ] 4.2 Implement `POST /auth/guest`: create a User row (isGuest=true, no password), create PlayerProfile, seed 2 default WeaponUnlock rows, return a signed JWT; verify with `curl` and a DB check.
-- [ ] 4.3 Implement `POST /auth/register`: validate unique username, hash password with bcrypt, create User + PlayerProfile + default unlocks, return JWT; verify 201 on success and 409 on duplicate username.
-- [ ] 4.4 Implement `POST /auth/login`: find user by username, compare bcrypt hash, return JWT on match; verify 200 on valid credentials and 401 on invalid.
-- [ ] 4.5 Add an Express middleware for protected routes that validates the `Authorization: Bearer <token>` header using `jsonwebtoken`; verify 401 on missing/invalid token.
+- [x] 4.1 Set up Express in `apps/server/src/rest/`; add JWT validation middleware using `jsonwebtoken` (inline or via `express-jwt`); load `JWT_SECRET` from environment; verify server starts without error.
+- [x] 4.2 Implement `POST /auth/guest`: create a User row (isGuest=true, no password), create PlayerProfile, seed 2 default WeaponUnlock rows, return a signed JWT; verify with `curl` and a DB check.
+- [x] 4.3 Implement `POST /auth/register`: validate unique username, hash password with bcrypt, create User + PlayerProfile + default unlocks, return JWT; verify 201 on success and 409 on duplicate username.
+- [x] 4.4 Implement `POST /auth/login`: find user by username, compare bcrypt hash, return JWT on match; verify 200 on valid credentials and 401 on invalid.
+- [x] 4.5 Add an Express middleware for protected routes that validates the `Authorization: Bearer <token>` header using `jsonwebtoken`; verify 401 on missing/invalid token.
 
 
 
