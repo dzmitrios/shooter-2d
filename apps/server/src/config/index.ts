@@ -1,4 +1,4 @@
-import type { WaveConfig } from '@shooter/shared';
+import type { MonsterType, WaveConfig } from '@shooter/shared';
 import gameJson from './game.json' with { type: 'json' };
 import weaponsJson from './weapons.json' with { type: 'json' };
 import wavesJson from './waves.json' with { type: 'json' };
@@ -6,6 +6,30 @@ import wavesJson from './waves.json' with { type: 'json' };
 export interface UpgradeStep {
   delta: number;
   description: string;
+}
+
+export interface ContactMonsterConfig {
+  hp: number;
+  speed: number;
+  damage: number;
+  radius: number;
+}
+
+export interface RangedMonsterConfig extends ContactMonsterConfig {
+  minRange: number;
+  maxRange: number;
+  fireRange: number;
+  fireCooldownMs: number;
+  projectileSpeed: number;
+  projectileRadius: number;
+}
+
+export interface MonstersConfig {
+  melee: ContactMonsterConfig;
+  ranged: RangedMonsterConfig;
+  swarm: ContactMonsterConfig;
+  spawnInset: number;
+  clusterSpread: number;
 }
 
 export interface GameConfig {
@@ -41,6 +65,7 @@ export interface GameConfig {
     monsterXp: number;
     playerDeathXp: number;
   };
+  monsters: MonstersConfig;
   metaPoints: {
     perWave: number;
     perKill: number;
@@ -64,4 +89,11 @@ export const waves: WaveConfig[] = wavesJson as WaveConfig[];
 
 export function getWeapon(weaponId: string): WeaponDef | undefined {
   return weapons.find((weapon) => weapon.id === weaponId);
+}
+
+export function getMonsterConfig(
+  type: MonsterType,
+  config: GameConfig = gameConfig,
+): ContactMonsterConfig | RangedMonsterConfig {
+  return config.monsters[type];
 }

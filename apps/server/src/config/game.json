@@ -40,6 +40,34 @@
     "monsterXp": 10,
     "playerDeathXp": 40
   },
+  "monsters": {
+    "melee": {
+      "hp": 40,
+      "speed": 90,
+      "damage": 10,
+      "radius": 16
+    },
+    "ranged": {
+      "hp": 28,
+      "speed": 70,
+      "damage": 12,
+      "radius": 16,
+      "minRange": 180,
+      "maxRange": 360,
+      "fireRange": 400,
+      "fireCooldownMs": 900,
+      "projectileSpeed": 280,
+      "projectileRadius": 5
+    },
+    "swarm": {
+      "hp": 12,
+      "speed": 160,
+      "damage": 6,
+      "radius": 10
+    },
+    "spawnInset": 24,
+    "clusterSpread": 36
+  },
   "metaPoints": {
     "perWave": 10,
     "perKill": 2,

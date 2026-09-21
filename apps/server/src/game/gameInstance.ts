@@ -7,15 +7,18 @@ import type {
   RunPlayerResult,
   ServerMessage,
   StateSnapshotMessage,
+  WaveConfig,
 } from '@shooter/shared';
 import {
   gameConfig,
+  getMonsterConfig,
   getWeapon,
   waves,
   type GameConfig,
   type WeaponDef,
 } from '../config/index.js';
 import type { PersistRun, RunPersistRecord } from './runPersistence.js';
+import { WaveSpawner } from './waveSpawner.js';
 
 export interface PermanentUpgrades {
   move_speed: number;
@@ -41,6 +44,7 @@ export interface GameInstanceOptions {
   onFinished?: (roomId: string) => void;
   config?: GameConfig;
   weapons?: WeaponDef[];
+  waves?: WaveConfig[];
 }
 
 interface SimPlayer {
@@ -59,6 +63,8 @@ interface SimMonster {
   state: MonsterState;
   radius: number;
   damage: number;
+  speed: number;
+  lastFireAt: number;
 }
 
 interface SimProjectile {
@@ -84,6 +90,7 @@ export class GameInstance {
   private readonly broadcast?: (userId: string, message: ServerMessage) => void;
   private readonly persistRun?: PersistRun;
   private readonly onFinished?: (roomId: string) => void;
+  private readonly waveSpawner: WaveSpawner;
 
   private readonly simPlayers = new Map<string, SimPlayer>();
   private readonly monsters: SimMonster[] = [];
@@ -114,6 +121,13 @@ export class GameInstance {
     this.persistRun = options.persistRun;
     this.onFinished = options.onFinished;
     this.lastTickAt = this.now();
+    this.waveSpawner = new WaveSpawner(options.waves ?? waves, {
+      width: this.config.arena.width,
+      height: this.config.arena.height,
+      inset: this.config.monsters.spawnInset,
+      clusterSpread: this.config.monsters.clusterSpread,
+      random: this.random,
+    });
 
     this.initPlayers(options.weapons);
     if (options.autoStart ?? true) {
@@ -181,20 +195,27 @@ export class GameInstance {
     x: number;
     y: number;
     hp?: number;
+    hpMultiplier?: number;
     targetPlayerId?: string | null;
   }): MonsterState {
+    const type = input.type ?? 'melee';
+    const stats = getMonsterConfig(type, this.config);
+    const hp =
+      input.hp ?? Math.max(1, Math.round(stats.hp * (input.hpMultiplier ?? 1)));
     const state: MonsterState = {
       id: this.nextId('mon'),
-      type: input.type ?? 'melee',
+      type,
       x: input.x,
       y: input.y,
-      hp: input.hp ?? 30,
+      hp,
       targetPlayerId: input.targetPlayerId ?? null,
     };
     this.monsters.push({
       state,
-      radius: this.config.combat.monsterRadius,
-      damage: this.config.combat.meleeDamage,
+      radius: stats.radius,
+      damage: stats.damage,
+      speed: stats.speed,
+      lastFireAt: Number.NEGATIVE_INFINITY,
     });
     return state;
   }
@@ -226,10 +247,12 @@ export class GameInstance {
     this.elapsedSec += dt;
     this.tickCount += 1;
 
+    this.spawnScheduledWaves();
     this.stepPlayers(dt);
+    this.stepMonsters(dt, now);
     this.stepProjectiles(dt);
     this.resolveProjectileHits();
-    this.resolveMeleeHits(now);
+    this.resolveContactHits(now);
     this.processDeaths();
     this.dispatchSnapshot();
 
@@ -295,6 +318,91 @@ export class GameInstance {
     }
   }
 
+  private spawnScheduledWaves(): void {
+    for (const spawn of this.waveSpawner.collectSpawns(this.elapsedSec)) {
+      this.spawnMonster({
+        type: spawn.type,
+        x: spawn.x,
+        y: spawn.y,
+        hpMultiplier: spawn.hpMultiplier,
+      });
+    }
+  }
+
+  private stepMonsters(dt: number, now: number): void {
+    for (const monster of this.monsters) {
+      const target = this.nearestLivingPlayer(monster.state.x, monster.state.y);
+      monster.state.targetPlayerId = target?.state.id ?? null;
+      if (!target) {
+        continue;
+      }
+      if (monster.state.type === 'ranged') {
+        this.stepRangedMonster(monster, target, dt, now);
+      } else {
+        this.seekTarget(monster, target.state.x, target.state.y, dt);
+      }
+    }
+  }
+
+  private stepRangedMonster(
+    monster: SimMonster,
+    target: SimPlayer,
+    dt: number,
+    now: number,
+  ): void {
+    const ranged = this.config.monsters.ranged;
+    const dx = target.state.x - monster.state.x;
+    const dy = target.state.y - monster.state.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < ranged.minRange) {
+      this.seekTarget(monster, monster.state.x - dx, monster.state.y - dy, dt);
+    } else if (dist > ranged.maxRange) {
+      this.seekTarget(monster, target.state.x, target.state.y, dt);
+    }
+
+    if (dist <= ranged.fireRange && now - monster.lastFireAt >= ranged.fireCooldownMs) {
+      monster.lastFireAt = now;
+      const aim = dist === 0 ? { dx: 1, dy: 0 } : { dx: dx / dist, dy: dy / dist };
+      this.projectiles.push({
+        radius: ranged.projectileRadius,
+        state: {
+          id: this.nextId('proj'),
+          ownerId: monster.state.id,
+          x: monster.state.x,
+          y: monster.state.y,
+          vx: aim.dx * ranged.projectileSpeed,
+          vy: aim.dy * ranged.projectileSpeed,
+          damage: monster.damage,
+        },
+      });
+    }
+  }
+
+  private seekTarget(monster: SimMonster, x: number, y: number, dt: number): void {
+    const { dx, dy } = normalize(x - monster.state.x, y - monster.state.y);
+    const { width, height } = this.config.arena;
+    monster.state.x += dx * monster.speed * dt;
+    monster.state.y += dy * monster.speed * dt;
+    monster.state.x = clamp(monster.state.x, monster.radius, width - monster.radius);
+    monster.state.y = clamp(monster.state.y, monster.radius, height - monster.radius);
+  }
+
+  private nearestLivingPlayer(x: number, y: number): SimPlayer | undefined {
+    let nearest: SimPlayer | undefined;
+    let nearestDist = Number.POSITIVE_INFINITY;
+    for (const player of this.simPlayers.values()) {
+      if (player.state.isDead) {
+        continue;
+      }
+      const dist = Math.hypot(player.state.x - x, player.state.y - y);
+      if (dist < nearestDist) {
+        nearest = player;
+        nearestDist = dist;
+      }
+    }
+    return nearest;
+  }
+
   private stepProjectiles(dt: number): void {
     const { width, height } = this.config.arena;
     for (let i = this.projectiles.length - 1; i >= 0; i -= 1) {
@@ -321,47 +429,75 @@ export class GameInstance {
       if (!projectile) {
         continue;
       }
-      let hit = false;
-      for (let m = this.monsters.length - 1; m >= 0; m -= 1) {
-        const monster = this.monsters[m];
-        if (!monster) {
-          continue;
-        }
-        if (
-          !circlesOverlap(
-            projectile.state.x,
-            projectile.state.y,
-            projectile.radius,
-            monster.state.x,
-            monster.state.y,
-            monster.radius,
-          )
-        ) {
-          continue;
-        }
-        monster.state.hp -= projectile.state.damage;
-        this.projectiles.splice(p, 1);
-        hit = true;
-        if (monster.state.hp <= 0) {
-          const owner = this.simPlayers.get(projectile.state.ownerId);
-          if (owner) {
-            owner.kills += 1;
-          }
-          this.spawnMonsterDrops(monster.state.x, monster.state.y);
-          this.monsters.splice(m, 1);
-        }
-        break;
-      }
-      if (hit) {
-        continue;
+      if (this.simPlayers.has(projectile.state.ownerId)) {
+        this.hitMonsters(projectile, p);
+      } else {
+        this.hitPlayers(projectile, p);
       }
     }
   }
 
-  private resolveMeleeHits(now: number): void {
+  private hitMonsters(projectile: SimProjectile, projectileIndex: number): boolean {
+    for (let m = this.monsters.length - 1; m >= 0; m -= 1) {
+      const monster = this.monsters[m];
+      if (!monster) {
+        continue;
+      }
+      if (
+        !circlesOverlap(
+          projectile.state.x,
+          projectile.state.y,
+          projectile.radius,
+          monster.state.x,
+          monster.state.y,
+          monster.radius,
+        )
+      ) {
+        continue;
+      }
+      monster.state.hp -= projectile.state.damage;
+      this.projectiles.splice(projectileIndex, 1);
+      if (monster.state.hp <= 0) {
+        const owner = this.simPlayers.get(projectile.state.ownerId);
+        if (owner) {
+          owner.kills += 1;
+        }
+        this.spawnMonsterDrops(monster.state.x, monster.state.y);
+        this.monsters.splice(m, 1);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private hitPlayers(projectile: SimProjectile, projectileIndex: number): boolean {
+    for (const player of this.simPlayers.values()) {
+      if (player.state.isDead) {
+        continue;
+      }
+      if (
+        !circlesOverlap(
+          projectile.state.x,
+          projectile.state.y,
+          projectile.radius,
+          player.state.x,
+          player.state.y,
+          player.radius,
+        )
+      ) {
+        continue;
+      }
+      player.state.hp -= projectile.state.damage;
+      this.projectiles.splice(projectileIndex, 1);
+      return true;
+    }
+    return false;
+  }
+
+  private resolveContactHits(now: number): void {
     const cooldown = this.config.combat.meleeCooldownMs;
     for (const monster of this.monsters) {
-      if (monster.state.type !== 'melee') {
+      if (monster.state.type === 'ranged') {
         continue;
       }
       for (const player of this.simPlayers.values()) {

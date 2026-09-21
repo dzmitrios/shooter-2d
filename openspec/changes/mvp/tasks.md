@@ -81,12 +81,12 @@
 
 ## 8. Monster AI and Wave Spawner
 
-- [ ] 8.1 Load `config/waves.json` at startup; implement `WaveSpawner` that tracks elapsed run time and spawns monster batches per the wave schedule; verify first wave fires at configured startSec.
-- [ ] 8.2 Implement melee monster AI: each tick compute vector to nearest living player; move at configured speed; deal contact damage when overlapping player; verify monster reaches a stationary player and reduces HP.
-- [ ] 8.3 Implement ranged monster AI: hold minimum distance from nearest player; when within firing range and cooldown elapsed, spawn a monster projectile aimed at player's position; verify projectile is created.
-- [ ] 8.4 Implement swarm monster AI: same seek logic as melee but with configured higher speed and lower HP; verify batch spawn of multiple swarm units.
-- [ ] 8.5 Implement monster projectile movement and player collision: advance, remove on bounds; detect player overlap, apply damage; verify player HP decrements on ranged monster attack.
-- [ ] 8.6 Verify escalating difficulty: after 2× wave duration the spawned monsters have higher HP or larger batch sizes than wave 1, per the config.
+- [x] 8.1 Load `config/waves.json` at startup; implement `WaveSpawner` that tracks elapsed run time and spawns monster batches per the wave schedule; verify first wave fires at configured startSec.
+- [x] 8.2 Implement melee monster AI: each tick compute vector to nearest living player; move at configured speed; deal contact damage when overlapping player; verify monster reaches a stationary player and reduces HP.
+- [x] 8.3 Implement ranged monster AI: hold minimum distance from nearest player; when within firing range and cooldown elapsed, spawn a monster projectile aimed at player's position; verify projectile is created.
+- [x] 8.4 Implement swarm monster AI: same seek logic as melee but with configured higher speed and lower HP; verify batch spawn of multiple swarm units.
+- [x] 8.5 Implement monster projectile movement and player collision: advance, remove on bounds; detect player overlap, apply damage; verify player HP decrements on ranged monster attack.
+- [x] 8.6 Verify escalating difficulty: after 2× wave duration the spawned monsters have higher HP or larger batch sizes than wave 1, per the config.
 
 
 

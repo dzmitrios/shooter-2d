@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
 import type { ServerMessage } from '@shooter/shared';
-import { gameConfig } from '../config/index.js';
+import { gameConfig, waves } from '../config/index.js';
 import { GameInstance, type GameInstanceOptions, type RoomPlayer } from './gameInstance.js';
 import type { RunPersistRecord } from './runPersistence.js';
 
@@ -36,6 +36,7 @@ function createInstance(
   const instance = new GameInstance('room-1', players, 1, {
     autoStart: false,
     random: () => 1,
+    waves: [],
     broadcast: (_userId, message) => {
       messages.push(message);
     },
@@ -295,5 +296,195 @@ describe('GameInstance', () => {
     assert.equal(instance.upgradeDeltas.move_speed.delta, gameConfig.upgrades.move_speed.delta);
     assert.equal(instance.upgradeDeltas.reload_speed.delta, gameConfig.upgrades.reload_speed.delta);
     assert.equal(instance.upgradeDeltas.damage.delta, gameConfig.upgrades.damage.delta);
+  });
+
+  it('spawns the first wave at configured startSec', () => {
+    const { instance, clock } = createInstance([player()], {
+      waves: [
+        {
+          startSec: 0.05,
+          endSec: 10,
+          spawns: [
+            { type: 'melee', count: 2, hpMultiplier: 1 },
+            { type: 'swarm', count: 3, hpMultiplier: 0.6 },
+          ],
+        },
+      ],
+    });
+
+    instance.tick();
+    assert.equal(instance.getSnapshot().monsters.length, 0);
+
+    clock.advance(50);
+    instance.tick();
+    const snapshot = instance.getSnapshot();
+    assert.equal(snapshot.monsters.length, 5);
+    assert.equal(snapshot.monsters.filter((monster) => monster.type === 'melee').length, 2);
+    assert.equal(snapshot.monsters.filter((monster) => monster.type === 'swarm').length, 3);
+  });
+
+  it('moves a melee monster to a stationary player and deals contact damage', () => {
+    const { instance, clock } = createInstance([player()]);
+    const target = instance.getPlayer('u1');
+    assert.ok(target);
+    instance.spawnMonster({
+      type: 'melee',
+      x: target.x - 80,
+      y: target.y,
+      hp: 80,
+    });
+
+    let reached = false;
+    for (let i = 0; i < 80; i += 1) {
+      clock.advance(50);
+      instance.tick();
+      const monster = instance.getSnapshot().monsters[0];
+      const current = instance.getPlayer('u1');
+      assert.ok(monster);
+      assert.ok(current);
+      if (current.hp < gameConfig.player.baseHp) {
+        reached = true;
+        assert.ok(monster.x > target.x - 80);
+        break;
+      }
+    }
+    assert.equal(reached, true);
+  });
+
+  it('holds range and fires a projectile at the nearest player', () => {
+    const { instance, clock } = createInstance([player()]);
+    const target = instance.getPlayer('u1');
+    assert.ok(target);
+    const ranged = gameConfig.monsters.ranged;
+    instance.spawnMonster({
+      type: 'ranged',
+      x: target.x + (ranged.minRange + ranged.maxRange) / 2,
+      y: target.y,
+    });
+
+    clock.advance(50);
+    instance.tick();
+    const snapshot = instance.getSnapshot();
+    assert.equal(snapshot.projectiles.length, 1);
+    const projectile = snapshot.projectiles[0];
+    const monster = snapshot.monsters[0];
+    assert.ok(projectile);
+    assert.ok(monster);
+    assert.equal(projectile.ownerId, monster.id);
+    assert.equal(projectile.damage, ranged.damage);
+    assert.ok(projectile.vx < 0);
+  });
+
+  it('seeks with swarm units that are faster and weaker than melee', () => {
+    const { instance, clock } = createInstance([player()], {
+      waves: [
+        {
+          startSec: 0,
+          endSec: 10,
+          spawns: [{ type: 'swarm', count: 5, hpMultiplier: 1 }],
+        },
+      ],
+    });
+    const target = instance.getPlayer('u1');
+    assert.ok(target);
+
+    clock.advance(50);
+    instance.tick();
+    const swarmBatch = instance.getSnapshot().monsters.filter((monster) => monster.type === 'swarm');
+    assert.equal(swarmBatch.length, 5);
+    assert.ok(swarmBatch.every((monster) => monster.hp === gameConfig.monsters.swarm.hp));
+
+    instance.spawnMonster({ type: 'melee', x: target.x - 200, y: target.y });
+    instance.spawnMonster({ type: 'swarm', x: target.x - 200, y: target.y });
+    const afterSpawn = instance.getSnapshot().monsters;
+    const melee = afterSpawn.find((monster) => monster.type === 'melee');
+    const swarm = afterSpawn.find(
+      (monster) => monster.type === 'swarm' && monster.x === target.x - 200,
+    );
+    assert.ok(melee);
+    assert.ok(swarm);
+    assert.ok(swarm.hp < melee.hp);
+
+    clock.advance(50);
+    instance.tick();
+    const moved = instance.getSnapshot().monsters;
+    const meleeMoved = moved.find((monster) => monster.id === melee.id);
+    const swarmMoved = moved.find((monster) => monster.id === swarm.id);
+    assert.ok(meleeMoved);
+    assert.ok(swarmMoved);
+    assert.ok(swarmMoved.x > meleeMoved.x);
+  });
+
+  it('moves monster projectiles and damages players on overlap', () => {
+    const { instance, clock } = createInstance([player()]);
+    const target = instance.getPlayer('u1');
+    assert.ok(target);
+    const ranged = gameConfig.monsters.ranged;
+    instance.spawnMonster({
+      type: 'ranged',
+      x: target.x + 220,
+      y: target.y,
+    });
+
+    let damaged = false;
+    for (let i = 0; i < 40; i += 1) {
+      clock.advance(50);
+      instance.tick();
+      const current = instance.getPlayer('u1');
+      assert.ok(current);
+      if (current.hp < gameConfig.player.baseHp) {
+        damaged = true;
+        assert.equal(current.hp, gameConfig.player.baseHp - ranged.damage);
+        break;
+      }
+    }
+    assert.equal(damaged, true);
+  });
+
+  it('escalates HP or batch size after twice the first wave duration', () => {
+    const first = waves[0];
+    const second = waves[1];
+    assert.ok(first);
+    assert.ok(second);
+    const firstDuration = first.endSec - first.startSec;
+    const firstCount = first.spawns.reduce((sum, spawn) => sum + spawn.count, 0);
+    const firstMaxHp = Math.max(
+      ...first.spawns.map((spawn) =>
+        Math.round(gameConfig.monsters[spawn.type].hp * spawn.hpMultiplier),
+      ),
+    );
+    const secondCount = second.spawns.reduce((sum, spawn) => sum + spawn.count, 0);
+    const secondMaxHp = Math.max(
+      ...second.spawns.map((spawn) =>
+        Math.round(gameConfig.monsters[spawn.type].hp * spawn.hpMultiplier),
+      ),
+    );
+    assert.ok(secondCount > firstCount || secondMaxHp > firstMaxHp);
+
+    const { instance, clock } = createInstance([player()], {
+      waves,
+      config: {
+        ...gameConfig,
+        player: { ...gameConfig.player, baseHp: 1_000_000, baseMaxHp: 1_000_000 },
+      },
+    });
+
+    clock.advance(Math.max(first.startSec * 1000, 50));
+    instance.tick();
+    const wave1 = instance.getSnapshot().monsters;
+    assert.equal(wave1.length, firstCount);
+    const wave1MaxHp = Math.max(...wave1.map((monster) => monster.hp));
+
+    const remainingMs = firstDuration * 2 * 1000 - Math.max(first.startSec * 1000, 50);
+    const steps = Math.ceil(remainingMs / 50);
+    for (let i = 0; i < steps; i += 1) {
+      clock.advance(50);
+      instance.tick();
+    }
+
+    const later = instance.getSnapshot().monsters;
+    const laterMaxHp = Math.max(...later.map((monster) => monster.hp));
+    assert.ok(later.length > wave1.length || laterMaxHp > wave1MaxHp);
+    assert.ok(later.length >= firstCount + secondCount);
   });
 });
