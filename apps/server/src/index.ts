@@ -1,4 +1,5 @@
 import http from 'node:http';
+import './config/index.js';
 import { createApp } from './rest/app.js';
 import { getJwtSecret } from './rest/jwt.js';
 import { attachWebSocket } from './ws/gateway.js';

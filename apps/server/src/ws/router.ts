@@ -45,7 +45,11 @@ export async function handleMessage(
       handleQueueLeave(ctx, session);
       return;
     case 'input:move':
+      handleInputMove(ctx, session, parsed);
+      return;
     case 'input:shoot':
+      handleInputShoot(ctx, session, parsed);
+      return;
     case 'player:chooseUpgrade':
       return;
     default:
@@ -218,6 +222,35 @@ async function handleQueueJoin(
     rank,
   });
   send(session.socket, { type: 'queue:status' });
+}
+
+function handleInputMove(ctx: GameContext, session: PlayerSession, raw: unknown): void {
+  const instance = session.roomId ? ctx.rooms.getRoom(session.roomId) : undefined;
+  if (!instance) {
+    return;
+  }
+  if (
+    typeof raw !== 'object' ||
+    raw === null ||
+    typeof (raw as { dx?: unknown }).dx !== 'number' ||
+    typeof (raw as { dy?: unknown }).dy !== 'number' ||
+    typeof (raw as { seq?: unknown }).seq !== 'number'
+  ) {
+    return;
+  }
+  const { dx, dy, seq } = raw as { dx: number; dy: number; seq: number };
+  instance.handleMove(session.userId, dx, dy, seq);
+}
+
+function handleInputShoot(ctx: GameContext, session: PlayerSession, raw: unknown): void {
+  const instance = session.roomId ? ctx.rooms.getRoom(session.roomId) : undefined;
+  if (!instance) {
+    return;
+  }
+  if (typeof raw !== 'object' || raw === null || typeof (raw as { angle?: unknown }).angle !== 'number') {
+    return;
+  }
+  instance.handleShoot(session.userId, (raw as { angle: number }).angle);
 }
 
 function handleQueueLeave(ctx: GameContext, session: PlayerSession): void {

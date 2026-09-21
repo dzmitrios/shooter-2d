@@ -66,16 +66,16 @@
 
 ## 7. Game Simulation Core (GameInstance)
 
-- [ ] 7.1 Implement `GameInstance` class: constructor takes room players + weapon selections + permanent upgrade levels; initialises PlayerState array with HP, weapon, position; starts `setInterval` at ~50 ms; verify instance creation and tick firing.
-- [ ] 7.2 Implement player movement tick: apply `input:move` dx/dy (normalised) × speed × deltaTime to player position; clamp to arena bounds; echo `seq`; verify in an isolated unit test.
-- [ ] 7.3 Implement shooting: on `input:shoot` create `ProjectileState` with ownerId, position, velocity vector from angle, damage from weapon config; verify projectile is added to sim state.
-- [ ] 7.4 Implement projectile movement: advance each projectile by vx/vy × deltaTime per tick; remove on out-of-bounds; verify projectile despawns at boundary.
-- [ ] 7.5 Implement projectile–monster collision: circle vs circle per tick; deduct damage, remove projectile on hit; if monster HP reaches zero, remove monster and spawn an XP orb (always) and possibly a medkit (per config probability) at its last position; verify XP orb appears in sim state after kill.
-- [ ] 7.6 Implement player damage from melee monsters: detect circle overlap, apply damage at configured interval, prevent rapid re-hits (cooldown per monster-player pair); verify HP decrements.
-- [ ] 7.7 Implement player death: when `hp <= 0` set `isDead = true`, broadcast `player:died`, spawn XP orb at player's last position, transition player to spectator; verify broadcast fires once and XP orb appears in snapshot.
-- [ ] 7.8 Implement run-end detection: after any player death, check if all players are dead; if so, snapshot each player's current rank as `rankBefore`, compute rank adjustment (±N configurable points based on waves survived vs. room average), compute results, broadcast `run:ended`, persist RunResult rows (with rankBefore and rankAfter), update PlayerProfile stats (totalRuns, bestWaves, totalKills, rank) and award metaPoints, mark Room FINISHED, stop `setInterval`; verify DB writes.
-- [ ] 7.9 Implement snapshot dispatch: every snapshot interval (50 ms or configurable) serialise full state and broadcast to all room WebSocket connections; verify clients receive snapshots during a run.
-- [ ] 7.10 Load in-run upgrade step values from `config/game.json` at server startup; verify the configured deltas for move_speed, reload_speed, and damage are accessible to GameInstance at run start.
+- [x] 7.1 Implement `GameInstance` class: constructor takes room players + weapon selections + permanent upgrade levels; initialises PlayerState array with HP, weapon, position; starts `setInterval` at ~50 ms; verify instance creation and tick firing.
+- [x] 7.2 Implement player movement tick: apply `input:move` dx/dy (normalised) × speed × deltaTime to player position; clamp to arena bounds; echo `seq`; verify in an isolated unit test.
+- [x] 7.3 Implement shooting: on `input:shoot` create `ProjectileState` with ownerId, position, velocity vector from angle, damage from weapon config; verify projectile is added to sim state.
+- [x] 7.4 Implement projectile movement: advance each projectile by vx/vy × deltaTime per tick; remove on out-of-bounds; verify projectile despawns at boundary.
+- [x] 7.5 Implement projectile–monster collision: circle vs circle per tick; deduct damage, remove projectile on hit; if monster HP reaches zero, remove monster and spawn an XP orb (always) and possibly a medkit (per config probability) at its last position; verify XP orb appears in sim state after kill.
+- [x] 7.6 Implement player damage from melee monsters: detect circle overlap, apply damage at configured interval, prevent rapid re-hits (cooldown per monster-player pair); verify HP decrements.
+- [x] 7.7 Implement player death: when `hp <= 0` set `isDead = true`, broadcast `player:died`, spawn XP orb at player's last position, transition player to spectator; verify broadcast fires once and XP orb appears in snapshot.
+- [x] 7.8 Implement run-end detection: after any player death, check if all players are dead; if so, snapshot each player's current rank as `rankBefore`, compute rank adjustment (±N configurable points based on waves survived vs. room average), compute results, broadcast `run:ended`, persist RunResult rows (with rankBefore and rankAfter), update PlayerProfile stats (totalRuns, bestWaves, totalKills, rank) and award metaPoints, mark Room FINISHED, stop `setInterval`; verify DB writes.
+- [x] 7.9 Implement snapshot dispatch: every snapshot interval (50 ms or configurable) serialise full state and broadcast to all room WebSocket connections; verify clients receive snapshots during a run.
+- [x] 7.10 Load in-run upgrade step values from `config/game.json` at server startup; verify the configured deltas for move_speed, reload_speed, and damage are accessible to GameInstance at run start.
 
 
 

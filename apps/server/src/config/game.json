@@ -25,7 +25,25 @@
   "player": {
     "baseSpeed": 160,
     "baseHp": 100,
-    "baseMaxHp": 100
+    "baseMaxHp": 100,
+    "radius": 16
+  },
+  "combat": {
+    "tickMs": 50,
+    "projectileSpeed": 500,
+    "projectileRadius": 4,
+    "monsterRadius": 16,
+    "meleeDamage": 10,
+    "meleeCooldownMs": 500,
+    "medkitDropChance": 0.15,
+    "medkitHeal": 25,
+    "monsterXp": 10,
+    "playerDeathXp": 40
+  },
+  "metaPoints": {
+    "perWave": 10,
+    "perKill": 2,
+    "perSecond": 0.2
   },
   "xpCurve": [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700]
 }

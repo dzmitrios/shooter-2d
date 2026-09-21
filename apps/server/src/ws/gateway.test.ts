@@ -36,6 +36,7 @@ async function startServer(directory?: MemoryPlayerDirectory): Promise<TestServe
   const ctx = createGameContext({
     players,
     roomStore: new MemoryRoomStore(),
+    persistRun: async () => {},
   });
   attachWebSocket(httpServer, ctx);
   await new Promise<void>((resolve) => {
@@ -48,6 +49,8 @@ async function startServer(directory?: MemoryPlayerDirectory): Promise<TestServe
     ctx,
     sockets,
     close: async () => {
+      ctx.matchmaking.stop();
+      ctx.rooms.destroyAll();
       for (const socket of sockets) {
         socket.on('error', () => {});
         if (
@@ -330,5 +333,28 @@ describe('WebSocket gateway', () => {
     await once(ws, 'close');
     await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(instance.disconnected.has('runner'), true);
+  });
+
+  it('sends state:snapshot to clients during a run', async () => {
+    const directory = new MemoryPlayerDirectory();
+    directory.seed('runner', { username: 'runner', weapons: ['pistol'] });
+    const server = await startServer(directory);
+    const ws = await connect(server, 'runner');
+    sendJson(ws, { type: 'queue:join', weaponId: 'pistol' });
+    await waitFor(ws, 'queue:status');
+    await server.ctx.matchmaking.tick();
+    const waiting = server.ctx.matchmaking.getWaitingRooms()[0];
+    assert.ok(waiting);
+    const snapshot = waitFor(ws, 'state:snapshot');
+    server.ctx.rooms.createRoom(waiting.roomId, waiting.players, 1);
+    const session = server.ctx.sessions.getByUserId('runner');
+    assert.ok(session);
+    session.roomId = waiting.roomId;
+    const message = await snapshot;
+    assert.equal(message.type, 'state:snapshot');
+    if (message.type !== 'state:snapshot') {
+      return;
+    }
+    assert.ok(message.players.some((entry) => entry.userId === 'runner'));
   });
 });

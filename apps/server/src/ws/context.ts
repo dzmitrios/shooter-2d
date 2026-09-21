@@ -1,5 +1,6 @@
 import type { WaveConfig } from '@shooter/shared';
 import waves from '../config/waves.json' with { type: 'json' };
+import { persistRunToDb, type PersistRun } from '../game/runPersistence.js';
 import { GroupRegistry } from './groupRegistry.js';
 import { MatchmakingQueue } from './matchmaking.js';
 import {
@@ -23,6 +24,7 @@ export interface GameContextOptions {
   roomStore?: RoomStore;
   now?: () => number;
   waveConfig?: WaveConfig[];
+  persistRun?: PersistRun;
 }
 
 export function createGameContext(options: GameContextOptions = {}): GameContext {
@@ -30,9 +32,19 @@ export function createGameContext(options: GameContextOptions = {}): GameContext
   const sessions = new SessionRegistry();
   // Info about groups (leader, members, groupCode)
   const groups = new GroupRegistry();
-  // Info about rooms (players, startedAt)
-  const rooms = new RoomManager();
   const players = options.players ?? prismaPlayerDirectory;
+  
+  // Info about rooms (players, startedAt)
+  const rooms = new RoomManager({
+    autoStart: true,
+    broadcast: (userId, message) => {
+      sessions.send(userId, message);
+    },
+    persistRun: options.persistRun ?? persistRunToDb,
+    onFinished: (roomId) => {
+      rooms.removeRoom(roomId);
+    },
+  });
 
   const matchmaking = new MatchmakingQueue({
     roomStore: options.roomStore ?? prismaRoomStore,
