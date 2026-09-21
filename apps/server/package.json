@@ -8,20 +8,23 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "dev": "tsx watch --env-file=.env src/index.ts",
-    "start": "node --env-file=.env dist/index.js"
+    "start": "node --env-file=.env dist/index.js",
+    "test": "tsx --test --test-reporter=spec src/ws/*.test.ts"
   },
   "dependencies": {
     "@shooter/db": "workspace:*",
     "@shooter/shared": "workspace:*",
     "bcrypt": "^6.0.0",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.17.0",
     "typescript": "^5.5.0"
   }

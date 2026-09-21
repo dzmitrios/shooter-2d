@@ -48,19 +48,19 @@
 
 ## 6. WebSocket Gateway, Matchmaking, and Room Management
 
-- [ ] 6.1 Attach a `ws` WebSocket server to the Express `http.Server` instance; authenticate the connection via JWT on upgrade (query param fallback); verify that a connection with a valid token is accepted and one without is closed.
-- [ ] 6.2 Implement `GroupRegistry` singleton: stores in-memory groups (groupId → { leader, members, groupCode }); exposes `createGroup`, `joinGroup`, `leaveGroup`, `getGroup` methods; verify a 6-char groupCode is unique and a group rejects a 11th member.
-- [ ] 6.3 Implement `group:create` handler: create group in GroupRegistry, respond with `group:state` including groupCode; verify group appears in registry.
-- [ ] 6.4 Implement `group:join` handler: look up group by groupCode, enforce <10 members, add player, broadcast `group:state` to all members; verify GROUP_FULL and GROUP_NOT_FOUND errors.
-- [ ] 6.5 Implement `group:leave` handler: remove player from group; if leader leaves, disband the group and notify remaining members; verify graceful handling.
-- [ ] 6.6 Implement `RoomManager` singleton: stores a map of `roomId → GameInstance`; exposes `createRoom`, `getRoom`, `removeRoom` methods; verify unit tests for create/get/remove.
-- [ ] 6.7 Implement WebSocket message router: parse incoming JSON, dispatch by `type` to the correct handler function, respond with error for unknown types; verify with integration test.
-- [ ] 6.8 Implement `MatchmakingQueue` singleton: maintains a rank-sorted list of pending slots (solo or group); every 500 ms assigns slots to WAITING rooms (rank-proximity greedy); creates new rooms as needed; verify two players of similar rank end up in the same room.
-- [ ] 6.9 Implement `queue:join` handler: validate weaponId is in player's unlocks, add solo player or full group to `MatchmakingQueue`, respond with `queue:status`; verify WEAPON_NOT_OWNED error.
-- [ ] 6.10 Implement `queue:leave` handler: remove player (and their group slot if applicable) from the queue, respond with `queue:cancelled`; verify player is removed before room assignment.
-- [ ] 6.11 Implement auto-start trigger in `MatchmakingQueue`: when a WAITING room reaches 10 players OR its timer reaches 10 s, create a `GameInstance`, update Room status to IN_RUN and set startedAt in DB, broadcast `run:started`; verify both triggers independently.
-- [ ] 6.12 Implement late-join window: when assigning a new slot, prefer WAITING rooms whose startedAt timer is < 10 s before opening a new room; verify a player arriving at t=5 s joins the existing room.
-- [ ] 6.13 Handle WebSocket disconnection: remove player from queue/group or mark as disconnected in-run; verify graceful handling in both phases.
+- [x] 6.1 Attach a `ws` WebSocket server to the Express `http.Server` instance; authenticate the connection via JWT on upgrade (query param fallback); verify that a connection with a valid token is accepted and one without is closed.
+- [x] 6.2 Implement `GroupRegistry` singleton: stores in-memory groups (groupId → { leader, members, groupCode }); exposes `createGroup`, `joinGroup`, `leaveGroup`, `getGroup` methods; verify a 6-char groupCode is unique and a group rejects a 11th member.
+- [x] 6.3 Implement `group:create` handler: create group in GroupRegistry, respond with `group:state` including groupCode; verify group appears in registry.
+- [x] 6.4 Implement `group:join` handler: look up group by groupCode, enforce <10 members, add player, broadcast `group:state` to all members; verify GROUP_FULL and GROUP_NOT_FOUND errors.
+- [x] 6.5 Implement `group:leave` handler: remove player from group; if leader leaves, disband the group and notify remaining members; verify graceful handling.
+- [x] 6.6 Implement `RoomManager` singleton: stores a map of `roomId → GameInstance`; exposes `createRoom`, `getRoom`, `removeRoom` methods; verify unit tests for create/get/remove.
+- [x] 6.7 Implement WebSocket message router: parse incoming JSON, dispatch by `type` to the correct handler function, respond with error for unknown types; verify with integration test.
+- [x] 6.8 Implement `MatchmakingQueue` singleton: maintains a rank-sorted list of pending slots (solo or group); every 500 ms assigns slots to WAITING rooms (rank-proximity greedy); creates new rooms as needed; verify two players of similar rank end up in the same room.
+- [x] 6.9 Implement `queue:join` handler: validate weaponId is in player's unlocks, add solo player or full group to `MatchmakingQueue`, respond with `queue:status`; verify WEAPON_NOT_OWNED error.
+- [x] 6.10 Implement `queue:leave` handler: remove player (and their group slot if applicable) from the queue, respond with `queue:cancelled`; verify player is removed before room assignment.
+- [x] 6.11 Implement auto-start trigger in `MatchmakingQueue`: when a WAITING room reaches 10 players OR its timer reaches 10 s, create a `GameInstance`, update Room status to IN_RUN and set startedAt in DB, broadcast `run:started`; verify both triggers independently.
+- [x] 6.12 Implement late-join window: when assigning a new slot, prefer WAITING rooms whose startedAt timer is < 10 s before opening a new room; verify a player arriving at t=5 s joins the existing room.
+- [x] 6.13 Handle WebSocket disconnection: remove player from queue/group or mark as disconnected in-run; verify graceful handling in both phases.
 
 
 
