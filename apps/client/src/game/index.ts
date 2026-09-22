@@ -8,6 +8,7 @@ export {
   PLAYER_RADIUS,
 } from './constants.ts';
 export { GameStore, bindGameNet, getGameStore, resetGameStore } from './gameStore.ts';
+export { resetHudStore, useHudStore } from './hudStore.ts';
 export { InputController } from './input.ts';
 export { stepArena } from './arenaLoop.ts';
 export { buildWorldView } from './worldView.ts';

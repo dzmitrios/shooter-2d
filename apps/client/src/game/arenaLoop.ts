@@ -2,6 +2,7 @@ import type { InterpolatedWorld } from '../net/interpolation.ts';
 import type { ClientSenders } from '../net/senders.ts';
 import type { FollowCamera } from './camera.ts';
 import type { GameStore } from './gameStore.ts';
+import { useHudStore } from './hudStore.ts';
 import type { InputController } from './input.ts';
 import { buildWorldView, type WorldView } from './worldView.ts';
 
@@ -25,8 +26,9 @@ export interface ArenaFrame {
 
 export function stepArena(ctx: ArenaStepContext): ArenaFrame {
   const { store, input, camera, senders, now, dt, viewWidth, viewHeight } = ctx;
+  const inputBlocked = useHudStore.getState().inputBlocked;
 
-  if (store.spawned && !store.localIsDead) {
+  if (store.spawned && !store.localIsDead && !inputBlocked) {
     const { dx, dy } = input.moveVector();
     const seq = store.applyLocalMove(dx, dy, now, dt);
     senders?.inputMove(dx, dy, seq, now);

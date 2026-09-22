@@ -164,11 +164,11 @@
 
 ## 17. Client: HUD and Overlays
 
-- [ ] 17.1 Implement React HUD overlay (rendered on top of the PixiJS canvas): display local player HP bar, current level, XP bar (no ammo count); subscribe to a Zustand game-state slice updated by the WS handler; verify HP and XP update in real time.
-- [ ] 17.2 Implement wave counter and kill count in HUD; verify values update as monsters are killed.
-- [ ] 17.3 Implement `UpgradeChoiceModal`: rendered when `player:levelUp` is received; display 3 upgrade option cards; on selection send `player:chooseUpgrade` and dismiss modal; verify modal blocks input until a choice is made.
-- [ ] 17.4 Implement spectator overlay: when local player dies, show "You died — watching" banner; continue rendering arena; verify banner appears and arena keeps updating.
-- [ ] 17.5 Implement `ResultsScreen`: rendered on `run:ended`; display per-player stats (waves, kills, survival time, meta-points earned); show "Return to Hub" button that navigates back and refreshes profile; verify meta-points are reflected in Hub after return.
+- [x] 17.1 Implement React HUD overlay (rendered on top of the PixiJS canvas): display local player HP bar, current level, XP bar (no ammo count); subscribe to a Zustand game-state slice updated by the WS handler; verify HP and XP update in real time.
+- [x] 17.2 Implement wave counter and kill count in HUD; verify values update as monsters are killed.
+- [x] 17.3 Implement `UpgradeChoiceModal`: rendered when `player:levelUp` is received; display 3 upgrade option cards; on selection send `player:chooseUpgrade` and dismiss modal; verify modal blocks input until a choice is made.
+- [x] 17.4 Implement spectator overlay: when local player dies, show "You died — watching" banner; continue rendering arena; verify banner appears and arena keeps updating.
+- [x] 17.5 Implement `ResultsScreen`: rendered on `run:ended`; display per-player stats (waves, kills, survival time, meta-points earned); show "Return to Hub" button that navigates back and refreshes profile; verify meta-points are reflected in Hub after return.
 
 
 

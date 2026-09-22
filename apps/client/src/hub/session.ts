@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '../auth/authStore.ts';
 import { bindGameNet } from '../game/gameStore.ts';
+import { useHudStore } from '../game/hudStore.ts';
 import { createSenders } from '../net/senders.ts';
 import { WsClient } from '../net/wsClient.ts';
 import { useHubStore } from './hubStore.ts';
@@ -16,10 +17,17 @@ export function connectHubSocket(token: string): () => void {
     (type, handler) => client.bus.on(type, handler),
     () => useAuthStore.getState().userId,
   );
+  const unbindHud = useHudStore.getState().bindNet(
+    (type, handler) => client.bus.on(type, handler),
+    () => useAuthStore.getState().userId,
+    () => useHubStore.getState().match?.waveConfig ?? [],
+    () => useHubStore.getState().senders,
+  );
   client.connect();
   return () => {
     unbindHub();
     unbindGame();
+    unbindHud();
     client.disconnect();
   };
 }

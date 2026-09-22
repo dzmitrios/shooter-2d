@@ -2,6 +2,7 @@ import type { GroupMember, ServerMessage, WaveConfig } from '@shooter/shared';
 import { create } from 'zustand';
 import { useAuthStore } from '../auth/authStore.ts';
 import { getGameStore, resetGameStore } from '../game/gameStore.ts';
+import { resetHudState, resetHudStore } from '../game/hudStore.ts';
 import type { ClientSenders } from '../net/senders.ts';
 import { fetchProfile, unlockWeapon, type PlayerProfile, type WeaponCatalogItem } from './profileApi.ts';
 
@@ -46,6 +47,7 @@ export interface HubState {
   startQueue: () => void;
   beginMatch: (seed: number, waveConfig: WaveConfig[]) => void;
   dismissMatchFound: () => void;
+  returnToHub: () => void;
 }
 
 export type HubSubscribe = <T extends ServerMessage['type']>(
@@ -217,6 +219,7 @@ export const useHubStore = create<HubState>((set, get) => ({
   beginMatch(seed, waveConfig) {
     clearMatchFoundTimer();
     resetGameStore();
+    resetHudState();
     getGameStore().setLocalUserId(useAuthStore.getState().userId);
     useAuthStore.setState({ screen: 'arena' });
     set({
@@ -235,6 +238,18 @@ export const useHubStore = create<HubState>((set, get) => ({
     clearMatchFoundTimer();
     set({ matchFoundVisible: false });
   },
+
+  returnToHub() {
+    const token = useAuthStore.getState().token;
+    clearMatchFoundTimer();
+    resetHudState();
+    resetGameStore();
+    set({ match: null, matchFoundVisible: false, queueStatus: 'idle' });
+    useAuthStore.setState({ screen: 'hub' });
+    if (token) {
+      void get().loadProfile(token);
+    }
+  },
 }));
 
 export function resetHubStore(): void {
@@ -242,4 +257,5 @@ export function resetHubStore(): void {
   useHubStore.getState().unbindNet?.();
   useHubStore.setState({ ...initialState });
   resetGameStore();
+  resetHudStore();
 }

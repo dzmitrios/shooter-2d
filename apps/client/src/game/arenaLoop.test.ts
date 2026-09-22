@@ -12,6 +12,7 @@ import { createSenders } from '../net/senders.ts';
 import { FollowCamera } from './camera.ts';
 import { ARENA_HEIGHT, ARENA_WIDTH, LOCAL_PLAYER_COLOR, MONSTER_STYLE, PICKUP_STYLE } from './constants.ts';
 import { GameStore } from './gameStore.ts';
+import { resetHudStore, useHudStore } from './hudStore.ts';
 import { InputController } from './input.ts';
 import { stepArena } from './arenaLoop.ts';
 import { buildWorldView } from './worldView.ts';
@@ -166,10 +167,12 @@ describe('arena loop', () => {
 
   beforeEach(() => {
     sent.length = 0;
+    resetHudStore();
   });
 
   afterEach(() => {
     sent.length = 0;
+    resetHudStore();
   });
 
   it('sends WASD move every frame and shoot on click or space', () => {
@@ -219,6 +222,34 @@ describe('arena loop', () => {
       viewHeight: 600,
     });
     assert.ok(sent.some((m) => m.type === 'input:shoot'));
+  });
+
+  it('blocks move and shoot while an upgrade choice is pending', () => {
+    useHudStore.setState({
+      upgradeChoices: ['move_speed', 'reload_speed', 'damage'],
+      pendingUpgrades: 1,
+      inputBlocked: true,
+    });
+    const store = new GameStore();
+    store.setLocalUserId('u-local');
+    store.applySnapshot(
+      snapshot(1, { players: [player({ id: 'local', userId: 'u-local', x: 400, y: 400 })] }),
+      0,
+    );
+    const input = new InputController();
+    input.pressKey('KeyD');
+    input.setPointer(500, 400, true);
+    stepArena({
+      store,
+      input,
+      camera: new FollowCamera(),
+      senders,
+      now: 16,
+      dt: 0.016,
+      viewWidth: 800,
+      viewHeight: 600,
+    });
+    assert.equal(sent.length, 0);
   });
 
   it('centres the camera on the local player and follows smoothly', () => {
