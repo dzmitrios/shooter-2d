@@ -127,8 +127,8 @@
 
 ## 13. Client: Auth Flow
 
-- [ ] 13.1 Implement `AuthPage` component with "Play as Guest" and "Login / Register" options; call REST endpoints and store JWT in Zustand + localStorage; verify token is saved and user is redirected to Hub on success.
-- [ ] 13.2 Implement auto-login: on app load check localStorage for a valid (non-expired) JWT; if present, skip auth and go to Hub; verify refresh-and-go-to-hub behaviour.
+- [x] 13.1 Implement `AuthPage` component with "Play as Guest" and "Login / Register" options; call REST endpoints and store JWT in Zustand + localStorage; verify token is saved and user is redirected to Hub on success.
+- [x] 13.2 Implement auto-login: on app load check localStorage for a valid (non-expired) JWT; if present, skip auth and go to Hub; verify refresh-and-go-to-hub behaviour.
 
 
 

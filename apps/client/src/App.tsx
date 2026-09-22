@@ -1,7 +1,18 @@
-import type { ClientMessage, ServerMessage } from '@shooter/shared';
-
-export type { ClientMessage, ServerMessage };
+import { useAuthStore } from './auth/authStore.ts';
+import { AuthPage } from './pages/AuthPage.tsx';
+import { HubPage } from './pages/HubPage.tsx';
 
 export default function App() {
-  return <h1>Shooter 2D</h1>;
+  const screen = useAuthStore((state) => state.screen);
+  const hydrated = useAuthStore((state) => state.hydrated);
+
+  if (!hydrated) {
+    useAuthStore.getState().hydrate();
+  }
+
+  if (screen === 'hub' || useAuthStore.getState().screen === 'hub') {
+    return <HubPage />;
+  }
+
+  return <AuthPage />;
 }
