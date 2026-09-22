@@ -4,7 +4,7 @@ import type { ClientMessage, ServerMessage } from '@shooter/shared';
 import { AUTH_TOKEN_KEY, resetAuthStore, useAuthStore } from '../auth/authStore.ts';
 import { MessageBus } from '../net/wsClient.ts';
 import { createSenders } from '../net/senders.ts';
-import { resetHubStore, useHubStore } from './hubStore.ts';
+import { MATCH_FOUND_DURATION_MS, resetHubStore, useHubStore } from './hubStore.ts';
 
 const originalFetch = globalThis.fetch;
 
@@ -200,5 +200,55 @@ describe('hub store', () => {
     bus.emit({ type: 'error', code: 'WEAPON_NOT_OWNED' });
     assert.equal(useHubStore.getState().queueError, 'WEAPON_NOT_OWNED');
     assert.equal(useHubStore.getState().queueStatus, 'idle');
+  });
+
+  it('navigates every recipient to the arena on the same run:started tick', () => {
+    assert.ok(MATCH_FOUND_DURATION_MS >= 500 && MATCH_FOUND_DURATION_MS <= 1000);
+
+    const bus = new MessageBus();
+    useHubStore.getState().bindNet(createSenders({ send: () => {} }), (type, handler) =>
+      bus.on(type, handler),
+    );
+
+    const started = {
+      type: 'run:started',
+      seed: 42,
+      waveConfig: [{ startSec: 0, endSec: 30, spawns: [{ type: 'melee' as const, count: 3, hpMultiplier: 1 }] }],
+    } satisfies ServerMessage;
+
+    const arrivals: Array<{ screen: string; overlay: boolean }> = [];
+    const second = new MessageBus();
+    second.on('run:started', (message) => {
+      useHubStore.getState().beginMatch(message.seed, message.waveConfig);
+      arrivals.push({
+        screen: useAuthStore.getState().screen,
+        overlay: useHubStore.getState().matchFoundVisible,
+      });
+    });
+
+    bus.on('run:started', () => {
+      arrivals.push({
+        screen: useAuthStore.getState().screen,
+        overlay: useHubStore.getState().matchFoundVisible,
+      });
+    });
+
+    bus.emit(started);
+    second.emit(started);
+
+    assert.equal(useAuthStore.getState().screen, 'arena');
+    assert.equal(useHubStore.getState().matchFoundVisible, true);
+    assert.equal(useHubStore.getState().match?.seed, 42);
+    assert.equal(arrivals.length, 2);
+    assert.deepEqual(arrivals[0], { screen: 'arena', overlay: true });
+    assert.deepEqual(arrivals[1], { screen: 'arena', overlay: true });
+  });
+
+  it('hides Match found overlay after the configured delay', (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    useHubStore.getState().beginMatch(7, []);
+    assert.equal(useHubStore.getState().matchFoundVisible, true);
+    t.mock.timers.tick(MATCH_FOUND_DURATION_MS);
+    assert.equal(useHubStore.getState().matchFoundVisible, false);
   });
 });

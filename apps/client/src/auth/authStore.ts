@@ -3,7 +3,7 @@ import { readValidJwt } from './jwt.ts';
 
 export const AUTH_TOKEN_KEY = 'shooter.jwt';
 
-export type AppScreen = 'auth' | 'hub';
+export type AppScreen = 'auth' | 'hub' | 'arena';
 
 export interface AuthState {
   token: string | null;

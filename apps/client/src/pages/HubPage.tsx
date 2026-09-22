@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useAuthStore } from '../auth/authStore.ts';
 import { useHubStore, type HubState } from '../hub/hubStore.ts';
-import { useHubSocket } from '../hub/session.ts';
 import type { WeaponCatalogItem } from '../hub/profileApi.ts';
 
 function useLiveHub<T>(selector: (state: HubState) => T): T {
@@ -27,8 +26,6 @@ export function HubPage() {
   if (token && loadedToken !== token) {
     void useHubStore.getState().loadProfile(token);
   }
-
-  useHubSocket(token);
 
   const owned = new Set(profile?.weaponUnlocks.map((row) => row.weaponId) ?? []);
 

@@ -145,7 +145,7 @@
 
 ## 15. Client: Matchmaking Transition
 
-- [ ] 15.1 Navigate to `ArenaPage` on receipt of `run:started`; display a brief "Match found!" overlay (0.5–1 s) before the arena renders; verify all players in the room transition simultaneously.
+- [x] 15.1 Navigate to `ArenaPage` on receipt of `run:started`; display a brief "Match found!" overlay (0.5–1 s) before the arena renders; verify all players in the room transition simultaneously.
 
 
 

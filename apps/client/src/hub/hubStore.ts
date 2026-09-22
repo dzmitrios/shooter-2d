@@ -1,10 +1,17 @@
-import type { GroupMember, ServerMessage } from '@shooter/shared';
+import type { GroupMember, ServerMessage, WaveConfig } from '@shooter/shared';
 import { create } from 'zustand';
 import { useAuthStore } from '../auth/authStore.ts';
 import type { ClientSenders } from '../net/senders.ts';
 import { fetchProfile, unlockWeapon, type PlayerProfile, type WeaponCatalogItem } from './profileApi.ts';
 
+export const MATCH_FOUND_DURATION_MS = 800;
+
 export type QueueStatus = 'idle' | 'joining' | 'finding';
+
+export interface MatchStart {
+  seed: number;
+  waveConfig: WaveConfig[];
+}
 
 export interface HubGroup {
   groupId: string;
@@ -21,6 +28,8 @@ export interface HubState {
   selectedWeaponId: string | null;
   group: HubGroup | null;
   queueStatus: QueueStatus;
+  match: MatchStart | null;
+  matchFoundVisible: boolean;
   loadError: string | null;
   shopError: string | null;
   groupError: string | null;
@@ -34,6 +43,8 @@ export interface HubState {
   createGroup: () => void;
   joinGroup: (groupCode: string) => void;
   startQueue: () => void;
+  beginMatch: (seed: number, waveConfig: WaveConfig[]) => void;
+  dismissMatchFound: () => void;
 }
 
 export type HubSubscribe = <T extends ServerMessage['type']>(
@@ -50,6 +61,8 @@ const initialState = {
   selectedWeaponId: null as string | null,
   group: null as HubGroup | null,
   queueStatus: 'idle' as QueueStatus,
+  match: null as MatchStart | null,
+  matchFoundVisible: false,
   loadError: null as string | null,
   shopError: null as string | null,
   groupError: null as string | null,
@@ -60,6 +73,15 @@ const initialState = {
 
 function ownedIds(profile: PlayerProfile | null): Set<string> {
   return new Set(profile?.weaponUnlocks.map((row) => row.weaponId) ?? []);
+}
+
+let matchFoundTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearMatchFoundTimer(): void {
+  if (matchFoundTimer !== null) {
+    clearTimeout(matchFoundTimer);
+    matchFoundTimer = null;
+  }
 }
 
 function defaultWeaponId(profile: PlayerProfile | null, current: string | null): string | null {
@@ -141,6 +163,9 @@ export const useHubStore = create<HubState>((set, get) => ({
       subscribe('queue:cancelled', () => {
         set({ queueStatus: 'idle' });
       }),
+      subscribe('run:started', (message) => {
+        get().beginMatch(message.seed, message.waveConfig);
+      }),
       subscribe('error', (message) => {
         if (message.code === 'GROUP_FULL' || message.code === 'GROUP_NOT_FOUND') {
           set({ groupError: message.code });
@@ -187,9 +212,30 @@ export const useHubStore = create<HubState>((set, get) => ({
     set({ queueError: null, queueStatus: 'joining' });
     senders?.queueJoin(selectedWeaponId, group?.groupId);
   },
+
+  beginMatch(seed, waveConfig) {
+    clearMatchFoundTimer();
+    useAuthStore.setState({ screen: 'arena' });
+    set({
+      queueStatus: 'idle',
+      queueError: null,
+      match: { seed, waveConfig },
+      matchFoundVisible: true,
+    });
+    matchFoundTimer = setTimeout(() => {
+      matchFoundTimer = null;
+      get().dismissMatchFound();
+    }, MATCH_FOUND_DURATION_MS);
+  },
+
+  dismissMatchFound() {
+    clearMatchFoundTimer();
+    set({ matchFoundVisible: false });
+  },
 }));
 
 export function resetHubStore(): void {
+  clearMatchFoundTimer();
   useHubStore.getState().unbindNet?.();
   useHubStore.setState({ ...initialState });
 }
