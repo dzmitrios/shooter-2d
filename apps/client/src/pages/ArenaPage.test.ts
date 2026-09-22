@@ -40,4 +40,12 @@ describe('ArenaPage matchmaking transition', () => {
     assert.match(html, /Match found!/);
     assert.doesNotMatch(html, />Hub</);
   });
+
+  it('arena stage is a full-viewport host for the PixiJS canvas', () => {
+    useHubStore.setState({ matchFoundVisible: false, match: { seed: 1, waveConfig: [] } });
+    const html = renderToStaticMarkup(createElement(ArenaPage));
+    assert.match(html, /class="arena-page"/);
+    assert.match(html, /class="arena-stage"/);
+    assert.match(html, /data-arena="ready"/);
+  });
 });

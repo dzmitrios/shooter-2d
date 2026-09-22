@@ -1,6 +1,7 @@
 import type { GroupMember, ServerMessage, WaveConfig } from '@shooter/shared';
 import { create } from 'zustand';
 import { useAuthStore } from '../auth/authStore.ts';
+import { getGameStore, resetGameStore } from '../game/gameStore.ts';
 import type { ClientSenders } from '../net/senders.ts';
 import { fetchProfile, unlockWeapon, type PlayerProfile, type WeaponCatalogItem } from './profileApi.ts';
 
@@ -215,6 +216,8 @@ export const useHubStore = create<HubState>((set, get) => ({
 
   beginMatch(seed, waveConfig) {
     clearMatchFoundTimer();
+    resetGameStore();
+    getGameStore().setLocalUserId(useAuthStore.getState().userId);
     useAuthStore.setState({ screen: 'arena' });
     set({
       queueStatus: 'idle',
@@ -238,4 +241,5 @@ export function resetHubStore(): void {
   clearMatchFoundTimer();
   useHubStore.getState().unbindNet?.();
   useHubStore.setState({ ...initialState });
+  resetGameStore();
 }

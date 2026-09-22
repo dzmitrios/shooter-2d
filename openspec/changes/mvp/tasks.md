@@ -151,14 +151,14 @@
 
 ## 16. Client: PixiJS Arena Renderer
 
-- [ ] 16.1 Create `ArenaPage` React component that mounts a `PIXI.Application` into a canvas element; start the PixiJS ticker; verify canvas renders at full browser viewport.
-- [ ] 16.2 Implement player sprites: render each `PlayerState` as a coloured circle with an aim-direction indicator; update positions each PixiJS tick from the interpolated game store; verify all players render and move.
-- [ ] 16.3 Implement monster sprites: render each `MonsterState` with a distinct shape/color per archetype; update each tick; verify monsters appear and move toward players.
-- [ ] 16.4 Implement projectile rendering: render `ProjectileState` as small circles/lines; add and remove sprites as projectiles appear/disappear in snapshots; verify visual projectile trails.
-- [ ] 16.5 Implement pickup rendering: render `PickupState` items with distinct icons/colors per type (XP orb=yellow, medkit=green); remove on collection; verify pickups appear and disappear.
-- [ ] 16.6 Implement keyboard + mouse input capture: WASD → `input:move` at each render frame; mouse position → aim angle → `input:shoot` on click/space; verify messages are sent to server.
-- [ ] 16.7 Implement arena boundary rendering: draw a visible rectangular arena border; verify player is visually clamped at edges.
-- [ ] 16.8 Implement camera: centre the viewport on the local player; verify the camera follows the local player smoothly.
+- [x] 16.1 Create `ArenaPage` React component that mounts a `PIXI.Application` into a canvas element; start the PixiJS ticker; verify canvas renders at full browser viewport.
+- [x] 16.2 Implement player sprites: render each `PlayerState` as a coloured circle with an aim-direction indicator; update positions each PixiJS tick from the interpolated game store; verify all players render and move.
+- [x] 16.3 Implement monster sprites: render each `MonsterState` with a distinct shape/color per archetype; update each tick; verify monsters appear and move toward players.
+- [x] 16.4 Implement projectile rendering: render `ProjectileState` as small circles/lines; add and remove sprites as projectiles appear/disappear in snapshots; verify visual projectile trails.
+- [x] 16.5 Implement pickup rendering: render `PickupState` items with distinct icons/colors per type (XP orb=yellow, medkit=green); remove on collection; verify pickups appear and disappear.
+- [x] 16.6 Implement keyboard + mouse input capture: WASD → `input:move` at each render frame; mouse position → aim angle → `input:shoot` on click/space; verify messages are sent to server.
+- [x] 16.7 Implement arena boundary rendering: draw a visible rectangular arena border; verify player is visually clamped at edges.
+- [x] 16.8 Implement camera: centre the viewport on the local player; verify the camera follows the local player smoothly.
 
 
 
