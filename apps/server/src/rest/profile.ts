@@ -58,6 +58,14 @@ profileRouter.get('/me', async (req, res, next) => {
       bestWaves: profile.bestWaves,
       totalKills: profile.totalKills,
       weaponUnlocks,
+      weapons: weapons.map(({ id, name, damage, fireRate, xpCost, defaultUnlock }) => ({
+        id,
+        name,
+        damage,
+        fireRate,
+        xpCost,
+        defaultUnlock,
+      })),
     });
   } catch (err) {
     next(err);

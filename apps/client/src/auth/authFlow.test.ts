@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import App from '../App.tsx';
+import { resetHubStore } from '../hub/hubStore.ts';
 import { AUTH_TOKEN_KEY, resetAuthStore, useAuthStore } from './authStore.ts';
 import { AuthPage } from '../pages/AuthPage.tsx';
+
+const originalFetch = globalThis.fetch;
 
 function encodeJwt(payload: Record<string, unknown>): string {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
@@ -44,6 +47,26 @@ describe('Client auth flow', () => {
   beforeEach(() => {
     installMemoryLocalStorage();
     resetAuthStore();
+    resetHubStore();
+    globalThis.fetch = (async () =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          rank: 0,
+          metaCurrency: 0,
+          totalRuns: 0,
+          bestWaves: 0,
+          totalKills: 0,
+          weaponUnlocks: [{ id: 'u1', weaponId: 'pistol' }],
+          weapons: [{ id: 'pistol', name: 'Pistol', xpCost: 0, defaultUnlock: true }],
+        }),
+      }) as Response) as typeof fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    resetHubStore();
   });
 
   it('renders Play as Guest and Login / Register options', () => {

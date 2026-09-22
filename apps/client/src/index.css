@@ -15,8 +15,20 @@ body {
 .auth-page,
 .hub-page {
   min-height: 100vh;
+}
+
+.auth-page {
   display: grid;
   place-items: center;
+}
+
+.hub-page {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  padding: 24px;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .auth-card {
@@ -100,7 +112,162 @@ body {
   font-weight: 600;
 }
 
-.auth-error {
+.auth-error,
+.hub-error {
   margin: 0;
   color: #ff8b8b;
+}
+
+.hub-header h1,
+.hub-panel h2 {
+  margin: 0 0 12px;
+}
+
+.hub-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.hub-stats div {
+  background: #16202c;
+  border: 1px solid #2a3a4d;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.hub-stats dt {
+  color: #8ea0b5;
+  font-size: 0.8rem;
+}
+
+.hub-stats dd {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.hub-muted {
+  color: #8ea0b5;
+}
+
+.hub-panel {
+  background: #16202c;
+  border: 1px solid #2a3a4d;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.weapon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.weapon-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #314557;
+  border-radius: 10px;
+  background: #0e141c;
+}
+
+.weapon-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.weapon-card.selected {
+  border-color: #3d8bfd;
+  box-shadow: 0 0 0 1px #3d8bfd;
+}
+
+.weapon-card.locked {
+  opacity: 0.9;
+}
+
+.weapon-cost {
+  margin: 0;
+  color: #b7c6d6;
+  font-size: 0.9rem;
+}
+
+.weapon-card button,
+.hub-group-actions button,
+.hub-join button,
+.hub-start-btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+  background: #223140;
+  color: #d5e2f0;
+}
+
+.weapon-card.owned button {
+  background: #3d8bfd;
+  color: #061018;
+  font-weight: 600;
+}
+
+.hub-start-btn {
+  background: #2f9e6b;
+  color: #04140d;
+  font-weight: 700;
+  padding: 12px 20px;
+  font-size: 1.05rem;
+}
+
+.hub-start-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.hub-group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+.hub-join {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+}
+
+.hub-join label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #b7c6d6;
+}
+
+.hub-join input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #314557;
+  background: #0e141c;
+  color: inherit;
+  font: inherit;
+  width: 8rem;
+  text-transform: uppercase;
+}
+
+.hub-group-code {
+  margin: 12px 0 0;
+}
+
+.hub-members {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.hub-queue {
+  margin: 8px 0 0;
+  color: #9ecbff;
+  font-weight: 600;
 }

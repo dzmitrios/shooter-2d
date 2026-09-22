@@ -134,12 +134,12 @@
 
 ## 14. Client: Hub UI
 
-- [ ] 14.1 Implement `HubPage` component: call `GET /profile/me` and display rank, metaCurrency, totalRuns, bestWaves, totalKills; verify data renders correctly.
-- [ ] 14.2 Implement Weapon Unlock shop section in Hub: list weapons not yet owned with their meta-currency cost; on buy call `POST /profile/weapons/unlock` and refresh the unlocked weapons list; verify insufficient-funds and already-owned errors are displayed.
-- [ ] 14.3 Implement weapon selector in Hub (active unlocked weapons as selectable cards): merged with the unlock shop — owned weapons are selectable, locked weapons show a cost and a buy button; verify at least one weapon is always selectable by default.
-- [ ] 14.4 Implement weapon selector in Hub: display the player's unlocked weapons as selectable cards; highlight the active selection; verify at least one weapon is always selected by default.
-- [ ] 14.5 Implement Group panel: "Create Group" button sends `group:create` and displays the received groupCode; "Join Group" form accepts a groupCode and sends `group:join`; group member list updates on `group:state`; verify GROUP_FULL and GROUP_NOT_FOUND errors are shown.
-- [ ] 14.6 Implement Start button: sends `queue:join` (with weaponId and groupId if in a group); on send, show a queue-status indicator ("Finding match…") that updates on `queue:status`; verify WEAPON_NOT_OWNED error is shown if no weapon selected.
+- [x] 14.1 Implement `HubPage` component: call `GET /profile/me` and display rank, metaCurrency, totalRuns, bestWaves, totalKills; verify data renders correctly.
+- [x] 14.2 Implement Weapon Unlock shop section in Hub: list weapons not yet owned with their meta-currency cost; on buy call `POST /profile/weapons/unlock` and refresh the unlocked weapons list; verify insufficient-funds and already-owned errors are displayed.
+- [x] 14.3 Implement weapon selector in Hub (active unlocked weapons as selectable cards): merged with the unlock shop — owned weapons are selectable, locked weapons show a cost and a buy button; verify at least one weapon is always selectable by default.
+- [x] 14.4 Implement weapon selector in Hub: display the player's unlocked weapons as selectable cards; highlight the active selection; verify at least one weapon is always selected by default.
+- [x] 14.5 Implement Group panel: "Create Group" button sends `group:create` and displays the received groupCode; "Join Group" form accepts a groupCode and sends `group:join`; group member list updates on `group:state`; verify GROUP_FULL and GROUP_NOT_FOUND errors are shown.
+- [x] 14.6 Implement Start button: sends `queue:join` (with weaponId and groupId if in a group); on send, show a queue-status indicator ("Finding match…") that updates on `queue:status`; verify WEAPON_NOT_OWNED error is shown if no weapon selected.
 
 
 
