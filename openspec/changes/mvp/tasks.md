@@ -174,11 +174,11 @@
 
 ## 18. End-to-End Verification
 
-- [ ] 18.1 Run through full solo guest flow: guest login → hub (select weapon) → press Start → queue → match found → arena → kill monsters → level up + choose upgrade → die → spectator → run ends → results → hub with updated meta-currency and rank; verify no errors at any step.
-- [ ] 18.2 Run a 2-player group flow: player A creates a group, shares groupCode, player B joins via groupCode; both select weapons; leader presses Start; both end up in the same room and see each other's positions in real time (verify via devtools showing consistent snapshots).
-- [ ] 18.3 Verify auto-start timer: one player joins queue; confirm the run starts within ~10 s even without a second player.
-- [ ] 18.4 Verify late-join window: player A queues at t=0, player B queues at t=7 s; confirm B joins A's room rather than a new one; player C queues at t=12 s and goes to a new room.
-- [ ] 18.5 Verify server-authoritative hit detection: send artificially delayed inputs; confirm that kills and damage are always resolved by the server and reflected correctly in snapshots.
-- [ ] 18.6 Verify client-side prediction: with simulated 100 ms RTT, local player movement feels instant; verify no visible "rubber banding" on stable connection.
-- [ ] 18.7 Verify wave escalation: let a run run for 3+ minutes and confirm later waves visibly spawn more / tougher monsters per `waves.json` config.
-- [ ] 18.8 Verify meta-progression and rank persistence: complete a run, disconnect, reconnect; confirm rank on profile changed in the expected direction and the RunResult row contains correct rankBefore and rankAfter values.
+- [x] 18.1 Run through full solo guest flow: guest login → hub (select weapon) → press Start → queue → match found → arena → kill monsters → level up + choose upgrade → die → spectator → run ends → results → hub with updated meta-currency and rank; verify no errors at any step.
+- [x] 18.2 Run a 2-player group flow: player A creates a group, shares groupCode, player B joins via groupCode; both select weapons; leader presses Start; both end up in the same room and see each other's positions in real time (verify via devtools showing consistent snapshots).
+- [x] 18.3 Verify auto-start timer: one player joins queue; confirm the run starts within ~10 s even without a second player.
+- [x] 18.4 Verify late-join window: player A queues at t=0, player B queues at t=7 s; confirm B joins A's room rather than a new one; player C queues at t=12 s and goes to a new room.
+- [x] 18.5 Verify server-authoritative hit detection: send artificially delayed inputs; confirm that kills and damage are always resolved by the server and reflected correctly in snapshots.
+- [x] 18.6 Verify client-side prediction: with simulated 100 ms RTT, local player movement feels instant; verify no visible "rubber banding" on stable connection.
+- [x] 18.7 Verify wave escalation: let a run run for 3+ minutes and confirm later waves visibly spawn more / tougher monsters per `waves.json` config.
+- [x] 18.8 Verify meta-progression and rank persistence: complete a run, disconnect, reconnect; confirm rank on profile changed in the expected direction and the RunResult row contains correct rankBefore and rankAfter values.

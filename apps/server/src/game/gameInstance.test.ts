@@ -548,6 +548,55 @@ describe('GameInstance', () => {
     assert.equal(damaged, true);
   });
 
+  it('spawns later waves with more and tougher monsters after 3 minutes', () => {
+    const { instance, clock } = createInstance([player()], {
+      waves,
+      config: {
+        ...gameConfig,
+        player: { ...gameConfig.player, baseHp: 1_000_000, baseMaxHp: 1_000_000 },
+        combat: { ...gameConfig.combat, meleeDamage: 0 },
+        monsters: {
+          ...gameConfig.monsters,
+          melee: { ...gameConfig.monsters.melee, damage: 0 },
+          ranged: { ...gameConfig.monsters.ranged, damage: 0 },
+          swarm: { ...gameConfig.monsters.swarm, damage: 0 },
+        },
+      },
+    });
+    const seen = new Set<string>();
+    const batches: Array<{ count: number; meleeHp: number[] }> = [];
+
+    for (const wave of waves) {
+      const targetMs = Math.max(wave.startSec * 1000, 50) + 200;
+      while (clock.now() < targetMs) {
+        clock.advance(50);
+        instance.tick();
+      }
+      const snapshot = instance.getSnapshot();
+      const fresh = snapshot.monsters.filter((monster) => !seen.has(monster.id));
+      for (const monster of fresh) {
+        seen.add(monster.id);
+      }
+      const expected = wave.spawns.reduce((sum, spawn) => sum + spawn.count, 0);
+      assert.equal(fresh.length, expected);
+      batches.push({
+        count: fresh.length,
+        meleeHp: fresh.filter((monster) => monster.type === 'melee').map((monster) => monster.hp),
+      });
+    }
+
+    assert.equal(batches.length, waves.length);
+    assert.ok(waves[4]!.startSec >= 180);
+    for (let i = 1; i < batches.length; i += 1) {
+      assert.ok(batches[i]!.count > batches[i - 1]!.count);
+      const prevHp = Math.max(...(batches[i - 1]!.meleeHp.length ? batches[i - 1]!.meleeHp : [0]));
+      const nextHp = Math.max(...batches[i]!.meleeHp);
+      assert.ok(nextHp >= prevHp);
+    }
+    assert.ok(Math.max(...batches[0]!.meleeHp) < Math.max(...batches[4]!.meleeHp));
+  });
+
+
   it('escalates HP or batch size after twice the first wave duration', () => {
     const first = waves[0];
     const second = waves[1];

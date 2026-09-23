@@ -58,6 +58,53 @@ describe('LocalPredictor', () => {
     assert.equal(reconciled.y, predicted.y);
   });
 
+  it('applies movement immediately and does not rubber-band at 100 ms RTT', () => {
+    const predictor = new LocalPredictor();
+    const start = { x: 400, y: 400 };
+    predictor.reset(start);
+
+    const dt = 0.05;
+    const speed = DEFAULT_PREDICTION_CONFIG.speed;
+    const oneWayFrames = 1;
+    const pending: Array<{ deliverAt: number; seq: number; dx: number; dy: number; dt: number }> = [];
+    const snapshots: Array<{ deliverAt: number; x: number; y: number; seq: number }> = [];
+
+    let serverX = start.x;
+    const serverY = start.y;
+    let maxCorrection = 0;
+    let instantSteps = 0;
+
+    for (let frame = 0; frame < 40; frame += 1) {
+      const seq = frame + 1;
+      const before = predictor.x;
+      predictor.applyMove(seq, 1, 0, frame * 50, dt);
+      assert.ok(predictor.x > before);
+      instantSteps += 1;
+      pending.push({ deliverAt: frame + oneWayFrames, seq, dx: 1, dy: 0, dt });
+
+      for (const input of pending.filter((item) => item.deliverAt === frame)) {
+        serverX += input.dx * speed * input.dt;
+        snapshots.push({
+          deliverAt: frame + oneWayFrames,
+          x: serverX,
+          y: serverY,
+          seq: input.seq,
+        });
+      }
+
+      for (const snapshot of snapshots.filter((item) => item.deliverAt === frame)) {
+        const pre = predictor.x;
+        const after = predictor.reconcile(snapshot);
+        maxCorrection = Math.max(maxCorrection, Math.abs(after.x - pre));
+      }
+    }
+
+    assert.equal(instantSteps, 40);
+    assert.ok(maxCorrection < 1e-6);
+    assert.ok(predictor.x > start.x);
+    assert.equal(predictor.y, serverY);
+  });
+
   it('clamps predicted position to the arena', () => {
     const predictor = new LocalPredictor({
       ...DEFAULT_PREDICTION_CONFIG,

@@ -1,5 +1,5 @@
 import type { WaveConfig } from '@shooter/shared';
-import { gameConfig } from '../config/index.js';
+import { gameConfig, type GameConfig } from '../config/index.js';
 import waves from '../config/waves.json' with { type: 'json' };
 import { persistRunToDb, type PersistRun } from '../game/runPersistence.js';
 import { GroupRegistry } from './groupRegistry.js';
@@ -29,6 +29,7 @@ export interface GameContextOptions {
   waveConfig?: WaveConfig[];
   persistRun?: PersistRun;
   inputRateLimiter?: InputRateLimiter;
+  config?: GameConfig;
 }
 
 export function createGameContext(options: GameContextOptions = {}): GameContext {
@@ -37,10 +38,13 @@ export function createGameContext(options: GameContextOptions = {}): GameContext
   // Info about groups (leader, members, groupCode)
   const groups = new GroupRegistry();
   const players = options.players ?? prismaPlayerDirectory;
-  
+  const waveConfig = options.waveConfig ?? (waves as WaveConfig[]);
+
   // Info about rooms (players, startedAt)
   const rooms = new RoomManager({
     autoStart: true,
+    waves: waveConfig,
+    config: options.config,
     broadcast: (userId, message) => {
       sessions.send(userId, message);
     },
@@ -54,7 +58,7 @@ export function createGameContext(options: GameContextOptions = {}): GameContext
     roomStore: options.roomStore ?? prismaRoomStore,
     roomManager: rooms,
     now: options.now ?? Date.now,
-    waveConfig: options.waveConfig ?? (waves as WaveConfig[]),
+    waveConfig,
     broadcast: (userId, message) => {
       sessions.send(userId, message);
     },

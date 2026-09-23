@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { WaveConfig } from '@shooter/shared';
+import { waves as waveConfig } from '../config/index.js';
 import { WaveSpawner } from './waveSpawner.js';
 
 const arena = {
@@ -57,5 +58,29 @@ describe('WaveSpawner', () => {
         spawn.y >= arena.height - arena.inset - arena.clusterSpread - 1e-6,
     );
     assert.equal(onEdge, true);
+  });
+
+  it('escalates spawn count and hp across 3+ minutes of waves.json', () => {
+    const spawner = new WaveSpawner(waveConfig, arena);
+    const batches = waveConfig.map((wave) => {
+      const spawned = spawner.collectSpawns(wave.startSec);
+      const expected = wave.spawns.reduce((sum, entry) => sum + entry.count, 0);
+      assert.equal(spawned.length, expected);
+      return spawned;
+    });
+
+    assert.ok(batches[0] && batches[4]);
+    assert.ok(batches[0].length < batches[1]!.length);
+    assert.ok(batches[1]!.length < batches[2]!.length);
+    assert.ok(batches[2]!.length < batches[3]!.length);
+    assert.ok(batches[3]!.length < batches[4].length);
+    assert.ok(waveConfig[4]!.startSec >= 180);
+
+    const firstMelee = waveConfig[0]?.spawns.find((entry) => entry.type === 'melee');
+    const lastMelee = waveConfig[4]?.spawns.find((entry) => entry.type === 'melee');
+    assert.ok(firstMelee);
+    assert.ok(lastMelee);
+    assert.ok(lastMelee.count > firstMelee.count);
+    assert.ok(lastMelee.hpMultiplier > firstMelee.hpMultiplier);
   });
 });
