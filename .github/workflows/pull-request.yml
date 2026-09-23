@@ -1,0 +1,54 @@
+name: Pull request
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: shooter
+          POSTGRES_PASSWORD: shooter
+          POSTGRES_DB: shooter2d
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U shooter -d shooter2d"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Environment
+        run: |
+          cp apps/server/.env.example apps/server/.env
+          cp apps/server/.env.example packages/db/.env
+
+      - name: Database
+        run: |
+          pnpm --filter @shooter/db exec prisma generate
+          pnpm --filter @shooter/db exec prisma migrate deploy
+
+      - name: Build workspace packages
+        run: |
+          pnpm --filter @shooter/shared build
+          pnpm --filter @shooter/db build
+
+      - run: pnpm typecheck
+
+      - run: pnpm -r --if-present run test

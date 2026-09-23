@@ -62,3 +62,25 @@ Auth check:
 ```bash
 curl -sS -X POST http://localhost:3000/auth/guest
 ```
+
+## Demo stand
+
+`infra/bootstrap` is applied once from a workstation and is kept. `infra/stand` is the running game: one instance, its network, and its secrets. Stopping the instance is not the off switch. A stopped instance still bills for its disk, and the public IP changes the next time it starts. Use the destroy dispatch below.
+
+### One-time bootstrap
+
+With AWS credentials that can create IAM, S3, and ECR in `eu-central-1`:
+
+```bash
+terraform -chdir=infra/bootstrap init
+terraform -chdir=infra/bootstrap apply
+terraform -chdir=infra/bootstrap output -raw deploy_role_arn
+```
+
+Store that role ARN as the GitHub Actions secret `AWS_ROLE_ARN`. Bootstrap state stays on this workstation (`infra/bootstrap/terraform.tfstate`).
+
+### Apply and destroy
+
+Dispatch **Apply stand**. It assumes `AWS_ROLE_ARN` with OIDC, pushes `linux/arm64` images, applies `infra/stand`, and prints `public_ip`. Open `http://<public_ip>/`.
+
+Dispatch **Destroy stand** when the showing is over. It assumes the same role and runs `terraform destroy` in `infra/stand` only. The state bucket, ECR repositories, and deploy role from `infra/bootstrap` remain.

@@ -74,4 +74,14 @@ desktop.ini
 .netlify/
 .turbo/
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+
 spec.md

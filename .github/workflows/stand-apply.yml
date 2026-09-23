@@ -1,0 +1,64 @@
+name: Apply stand
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-central-1
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: account
+        run: |
+          account=$(aws sts get-caller-identity --query Account --output text)
+          echo "registry=${account}.dkr.ecr.${AWS_REGION}.amazonaws.com" >> "$GITHUB_OUTPUT"
+          echo "bucket=shooter-2d-tfstate-${account}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push linux/arm64 images
+        env:
+          REGISTRY: ${{ steps.account.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx build --platform linux/arm64 \
+            -f apps/server/Dockerfile \
+            -t "$REGISTRY/server:$IMAGE_TAG" \
+            --push .
+          docker buildx build --platform linux/arm64 \
+            -f apps/client/Dockerfile \
+            -t "$REGISTRY/web:$IMAGE_TAG" \
+            --push .
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.4
+
+      - name: Apply infra/stand
+        env:
+          TF_STATE_BUCKET: ${{ steps.account.outputs.bucket }}
+          SERVER_IMAGE: ${{ steps.account.outputs.registry }}/server:${{ github.sha }}
+          WEB_IMAGE: ${{ steps.account.outputs.registry }}/web:${{ github.sha }}
+        run: |
+          terraform -chdir=infra/stand init -input=false -backend-config="bucket=${TF_STATE_BUCKET}"
+          terraform -chdir=infra/stand apply -input=false -auto-approve \
+            -var="server_image=${SERVER_IMAGE}" \
+            -var="web_image=${WEB_IMAGE}"
+          echo "public_ip=$(terraform -chdir=infra/stand output -raw public_ip)"

@@ -1,0 +1,75 @@
+#!/bin/bash
+set -euo pipefail
+exec > /var/log/shooter-user-data.log 2>&1
+
+dnf install -y docker
+systemctl enable --now docker
+
+install -d /usr/libexec/docker/cli-plugins /usr/local/lib/docker/cli-plugins
+curl -fsSL "https://github.com/docker/compose/releases/download/v2.39.4/docker-compose-linux-aarch64" \
+  -o /usr/libexec/docker/cli-plugins/docker-compose
+chmod 0755 /usr/libexec/docker/cli-plugins/docker-compose
+cp /usr/libexec/docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
+
+for _ in $(seq 1 30); do
+  docker info >/dev/null 2>&1 && break
+  sleep 2
+done
+
+aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecr_registry}
+
+install -d -m 0700 /opt/shooter
+
+cat > /opt/shooter/compose.yaml <<'COMPOSE'
+services:
+  web:
+    image: ${web_image}
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+  server:
+    image: ${server_image}
+    env_file:
+      - .env
+    environment:
+      PORT: "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shooter -d shooter"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+COMPOSE
+
+JWT_SECRET="$(aws ssm get-parameter --region ${region} --name "${jwt_parameter_name}" --with-decryption --query Parameter.Value --output text)"
+POSTGRES_PASSWORD="$(aws ssm get-parameter --region ${region} --name "${db_password_parameter_name}" --with-decryption --query Parameter.Value --output text)"
+
+umask 077
+cat > /opt/shooter/.env <<EOF
+DATABASE_URL=postgresql://shooter:$${POSTGRES_PASSWORD}@postgres:5432/shooter
+JWT_SECRET=$${JWT_SECRET}
+POSTGRES_USER=shooter
+POSTGRES_PASSWORD=$${POSTGRES_PASSWORD}
+POSTGRES_DB=shooter
+EOF
+
+cd /opt/shooter
+docker compose pull
+docker compose up -d

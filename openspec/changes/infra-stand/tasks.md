@@ -12,16 +12,16 @@
 
 ## 3. Terraform
 
-- [ ] 3.1 Add `infra/bootstrap` (Terraform >= 1.10) with an S3 state bucket using a lockfile, ECR repositories for `server` and `web`, and a GitHub OIDC deploy role. Verify `terraform validate` in that root succeeds.
-- [ ] 3.2 Add `infra/stand` module `network`: VPC, public subnet, internet gateway, and no NAT gateway. Verify `terraform validate` in `infra/stand` succeeds.
-- [ ] 3.3 Add `infra/stand` module `compute`: `t4g.small` with an auto-assigned public IP, a security group open only on TCP 80, an instance role for SSM, ECR pull, and SSM parameter read, user-data that starts Compose from ECR, and a `public_ip` output. Generate `JWT_SECRET` and the database password into SSM SecureString parameters in this root. Verify `terraform validate` still succeeds and the plan references no Elastic IP, load balancer, or NAT gateway.
+- [x] 3.1 Add `infra/bootstrap` (Terraform >= 1.10) with an S3 state bucket using a lockfile, ECR repositories for `server` and `web`, and a GitHub OIDC deploy role. Verify `terraform validate` in that root succeeds.
+- [x] 3.2 Add `infra/stand` module `network`: VPC, public subnet, internet gateway, and no NAT gateway. Verify `terraform validate` in `infra/stand` succeeds.
+- [x] 3.3 Add `infra/stand` module `compute`: `t4g.small` with an auto-assigned public IP, a security group open only on TCP 80, an instance role for SSM, ECR pull, and SSM parameter read, user-data that starts Compose from ECR, and a `public_ip` output. Generate `JWT_SECRET` and the database password into SSM SecureString parameters in this root. Verify `terraform validate` still succeeds and the plan references no Elastic IP, load balancer, or NAT gateway.
 
 ## 4. GitHub Actions
 
-- [ ] 4.1 Add a pull request workflow that installs dependencies, typechecks, and tests on Node 20 with a Postgres service, and does not run Terraform. Verify the workflow trigger is `pull_request` only.
-- [ ] 4.2 Add a manual apply workflow that assumes the bootstrap role via OIDC, builds and pushes `linux/arm64` images to ECR, applies `infra/stand`, and prints `public_ip`. Verify the workflow trigger is `workflow_dispatch` only.
-- [ ] 4.3 Add a manual destroy workflow that assumes the same role and runs `terraform destroy` in `infra/stand` only. Verify the workflow does not target `infra/bootstrap`.
+- [x] 4.1 Add a pull request workflow that installs dependencies, typechecks, and tests on Node 20 with a Postgres service, and does not run Terraform. Verify the workflow trigger is `pull_request` only.
+- [x] 4.2 Add a manual apply workflow that assumes the bootstrap role via OIDC, builds and pushes `linux/arm64` images to ECR, applies `infra/stand`, and prints `public_ip`. Verify the workflow trigger is `workflow_dispatch` only.
+- [x] 4.3 Add a manual destroy workflow that assumes the same role and runs `terraform destroy` in `infra/stand` only. Verify the workflow does not target `infra/bootstrap`.
 
 ## 5. Operator notes
 
-- [ ] 5.1 Document the one-time local bootstrap, the GitHub role-ARN secret, and the apply and destroy dispatches in the README. Verify the section names `infra/bootstrap` and `infra/stand` and states that stopping the instance is not the off switch.
+- [x] 5.1 Document the one-time local bootstrap, the GitHub role-ARN secret, and the apply and destroy dispatches in the README. Verify the section names `infra/bootstrap` and `infra/stand` and states that stopping the instance is not the off switch.

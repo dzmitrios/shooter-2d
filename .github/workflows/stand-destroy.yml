@@ -1,0 +1,37 @@
+name: Destroy stand
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      - id: account
+        run: |
+          account=$(aws sts get-caller-identity --query Account --output text)
+          echo "bucket=shooter-2d-tfstate-${account}" >> "$GITHUB_OUTPUT"
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.4
+
+      - name: Destroy infra/stand
+        env:
+          TF_STATE_BUCKET: ${{ steps.account.outputs.bucket }}
+        run: |
+          terraform -chdir=infra/stand init -input=false -backend-config="bucket=${TF_STATE_BUCKET}"
+          terraform -chdir=infra/stand destroy -input=false -auto-approve \
+            -var="server_image=unused" \
+            -var="web_image=unused"
