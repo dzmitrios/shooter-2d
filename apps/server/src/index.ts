@@ -5,9 +5,6 @@ import { getJwtSecret } from './rest/jwt.js';
 import { attachWebSocket } from './ws/gateway.js';
 import { createGameContext } from './ws/context.js';
 
-// TODO: remove this
-export type { ClientMessage, ServerMessage } from '@shooter/shared';
-
 const PORT = Number(process.env['PORT'] ?? 3000);
 
 // Fail fast if JWT_SECRET is unset, rather than 500ing on the first auth request.
