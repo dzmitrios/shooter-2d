@@ -15,6 +15,10 @@ export class SessionRegistry {
   private readonly byUserId = new Map<string, PlayerSession>();
   private readonly bySocket = new Map<WebSocket, PlayerSession>();
 
+  connectedCount(): number {
+    return this.byUserId.size;
+  }
+
   add(session: PlayerSession): void {
     this.byUserId.set(session.userId, session);
     this.bySocket.set(session.socket, session);

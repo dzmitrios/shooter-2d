@@ -1,8 +1,8 @@
 ## 1. Server observability
 
-- [ ] 1.1 Add Pino and write startup, request-failure, and matchmaking-failure logs as single-line JSON on stdout. Verify a unit test asserts a startup line parses as JSON and includes level, time, and the listen port.
-- [ ] 1.2 Initialize `@sentry/node` only when `SENTRY_DSN` is set, and report errors from the Express error handler when it is. Verify a test that an unset DSN still builds the app and serves a route, and that a thrown handler reports when a DSN is set, without a live Sentry request.
-- [ ] 1.3 Expose `GET /metrics` with `prom-client` series `shooter_connected_players`, `shooter_rooms`, `shooter_matchmaking_failures_total`, and `shooter_tick_duration_seconds`. Record the histogram around `GameInstance.tick()` and increment the matchmaking counter on tick failure. Verify a test that `GET /metrics` returns Prometheus text containing those names.
+- [x] 1.1 Add Pino and write startup, request-failure, and matchmaking-failure logs as single-line JSON on stdout. Verify a unit test asserts a startup line parses as JSON and includes level, time, and the listen port.
+- [x] 1.2 Initialize `@sentry/node` only when `SENTRY_DSN` is set, and report errors from the Express error handler when it is. Verify a test that an unset DSN still builds the app and serves a route, and that a thrown handler reports when a DSN is set, without a live Sentry request.
+- [x] 1.3 Expose `GET /metrics` with `prom-client` series `shooter_connected_players`, `shooter_rooms`, `shooter_matchmaking_failures_total`, and `shooter_tick_duration_seconds`. Record the histogram around `GameInstance.tick()` and increment the matchmaking counter on tick failure. Verify a test that `GET /metrics` returns Prometheus text containing those names.
 
 ## 2. Images and Compose
 

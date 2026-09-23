@@ -1,6 +1,8 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import type { ServerMessage, WaveConfig } from '@shooter/shared';
 import type { RoomPlayer } from '../game/gameInstance.js';
+import { logger } from '../observability/logger.js';
+import { matchmakingFailures } from '../observability/metrics.js';
 import type { RoomManager } from './roomManager.js';
 import type { RoomStore } from './roomStore.js';
 
@@ -46,8 +48,9 @@ export class MatchmakingQueue {
       return;
     }
     this.timer = setInterval(() => {
-      void this.tick().catch((err) => {
-        console.error('matchmaking tick failed', err);
+      void this.tick().catch((err: unknown) => {
+        matchmakingFailures.inc();
+        logger.error({ err }, 'matchmaking tick failed');
       });
     }, MATCH_TICK_MS);
   }

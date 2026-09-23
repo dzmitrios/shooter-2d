@@ -19,6 +19,8 @@ import {
   type GameConfig,
   type WeaponDef,
 } from '../config/index.js';
+import { logger } from '../observability/logger.js';
+import { tickDuration } from '../observability/metrics.js';
 import type { PersistRun, RunPersistRecord } from './runPersistence.js';
 import { WaveSpawner } from './waveSpawner.js';
 
@@ -276,6 +278,15 @@ export class GameInstance {
   }
 
   tick(): void {
+    const stop = tickDuration.startTimer();
+    try {
+      this.runTick();
+    } finally {
+      stop();
+    }
+  }
+
+  private runTick(): void {
     if (this.ended || this.ending) {
       return;
     }
@@ -735,7 +746,7 @@ export class GameInstance {
     try {
       await this.persistRun?.(this.roomId, records);
     } catch (err) {
-      console.error('failed to persist run', err);
+      logger.error({ err }, 'failed to persist run');
     }
 
     this.ended = true;

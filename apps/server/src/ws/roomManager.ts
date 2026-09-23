@@ -18,6 +18,10 @@ export class RoomManager {
     return instance;
   }
 
+  roomCount(): number {
+    return this.instances.size;
+  }
+
   getRoom(roomId: string): GameInstance | undefined {
     return this.instances.get(roomId);
   }
