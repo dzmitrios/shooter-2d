@@ -9,12 +9,13 @@ import type {
 } from '@shooter/shared';
 import type { ClientMessage } from '@shooter/shared';
 import { createSenders } from '../net/senders.ts';
+import { stepArena } from './arenaLoop.ts';
 import { FollowCamera } from './camera.ts';
 import { ARENA_HEIGHT, ARENA_WIDTH, LOCAL_PLAYER_COLOR, MONSTER_STYLE, PICKUP_STYLE } from './constants.ts';
 import { GameStore } from './gameStore.ts';
 import { resetHudStore, useHudStore } from './hudStore.ts';
 import { InputController } from './input.ts';
-import { stepArena } from './arenaLoop.ts';
+import { INPUT_SEND_INTERVAL_MS, InputSendGate } from './inputSendGate.ts';
 import { buildWorldView } from './worldView.ts';
 
 function player(partial: Partial<PlayerState> & Pick<PlayerState, 'id' | 'x' | 'y'>): PlayerState {
@@ -175,7 +176,7 @@ describe('arena loop', () => {
     resetHudStore();
   });
 
-  it('sends WASD move every frame and shoot on click or space', () => {
+  it('sends WASD move and shoot at 20Hz, while predicting every frame', () => {
     const store = new GameStore();
     store.setLocalUserId('u-local');
     store.applySnapshot(
@@ -186,12 +187,14 @@ describe('arena loop', () => {
     input.pressKey('KeyD');
     input.setPointer(500, 400, true);
     const camera = new FollowCamera();
+    const sendGate = new InputSendGate();
 
     const frame = stepArena({
       store,
       input,
       camera,
       senders,
+      sendGate,
       now: 16,
       dt: 0.016,
       viewWidth: 800,
@@ -207,6 +210,22 @@ describe('arena loop', () => {
     assert.equal(typeof shoot.angle, 'number');
     assert.equal(frame.world.players[0]?.x, store.predictor.x);
 
+    const predictedX = store.predictor.x;
+    sent.length = 0;
+    stepArena({
+      store,
+      input,
+      camera,
+      senders,
+      sendGate,
+      now: 32,
+      dt: 0.016,
+      viewWidth: 800,
+      viewHeight: 600,
+    });
+    assert.equal(sent.length, 0);
+    assert.ok(store.predictor.x > predictedX);
+
     sent.length = 0;
     input.pointerDown = false;
     input.releaseKey('KeyD');
@@ -216,12 +235,14 @@ describe('arena loop', () => {
       input,
       camera,
       senders,
-      now: 32,
+      sendGate,
+      now: 16 + INPUT_SEND_INTERVAL_MS,
       dt: 0.016,
       viewWidth: 800,
       viewHeight: 600,
     });
-    assert.ok(sent.some((m) => m.type === 'input:shoot'));
+    assert.equal(sent.filter((m) => m.type === 'input:move').length, 1);
+    assert.equal(sent.filter((m) => m.type === 'input:shoot').length, 1);
   });
 
   it('blocks move and shoot while an upgrade choice is pending', () => {
@@ -244,6 +265,7 @@ describe('arena loop', () => {
       input,
       camera: new FollowCamera(),
       senders,
+      sendGate: new InputSendGate(),
       now: 16,
       dt: 0.016,
       viewWidth: 800,
@@ -261,11 +283,13 @@ describe('arena loop', () => {
     );
     const camera = new FollowCamera();
     const input = new InputController();
+    const sendGate = new InputSendGate();
     const first = stepArena({
       store,
       input,
       camera,
       senders: null,
+      sendGate,
       now: 0,
       dt: 0.016,
       viewWidth: 800,
@@ -281,6 +305,7 @@ describe('arena loop', () => {
       input,
       camera,
       senders: null,
+      sendGate,
       now: 16,
       dt: 0.016,
       viewWidth: 800,

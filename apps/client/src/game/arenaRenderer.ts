@@ -11,6 +11,7 @@ import {
 } from './constants.ts';
 import { getGameStore } from './gameStore.ts';
 import { InputController } from './input.ts';
+import { InputSendGate } from './inputSendGate.ts';
 import type {
   MonsterDrawable,
   PickupDrawable,
@@ -59,6 +60,7 @@ export async function mountArenaRenderer(host: HTMLElement): Promise<ArenaRender
   const store = getGameStore();
   const camera = new FollowCamera();
   const input = new InputController();
+  const sendGate = new InputSendGate();
   const detachInput = input.attach(window, canvas);
 
   const players = new Map<string, Graphics>();
@@ -72,6 +74,7 @@ export async function mountArenaRenderer(host: HTMLElement): Promise<ArenaRender
       input,
       camera,
       senders: useHubStore.getState().senders,
+      sendGate,
       now: performance.now(),
       dt: app.ticker.deltaMS / 1000,
       viewWidth: app.screen.width,
