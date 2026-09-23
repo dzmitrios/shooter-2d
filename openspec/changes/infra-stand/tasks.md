@@ -6,9 +6,9 @@
 
 ## 2. Images and Compose
 
-- [ ] 2.1 Add a server image that builds the workspace, includes the Prisma schema and migrations, and starts with `prisma migrate deploy` then `node dist/index.js` using process env rather than `--env-file`. Verify `docker build` of that image completes.
-- [ ] 2.2 Add a web image that runs `vite build` with `VITE_API_URL` and `VITE_WS_URL` unset and serves it from nginx. Proxy `/auth/` and `/profile/` to the server, proxy `/` only when the `Upgrade` header is set, and do not proxy `/metrics`. Verify `nginx -t` against that config succeeds.
-- [ ] 2.3 Add a Compose file with `web`, `server`, and `postgres:17` where only host port 80 is published and `DATABASE_URL` plus `JWT_SECRET` come from the environment. Verify `docker compose config` shows no published ports other than 80.
+- [x] 2.1 Add a server image that builds the workspace, includes the Prisma schema and migrations, and starts with `prisma migrate deploy` then `node dist/index.js` using process env rather than `--env-file`. Verify `docker build` of that image completes.
+- [x] 2.2 Add a web image that runs `vite build` with `VITE_API_URL` and `VITE_WS_URL` unset and serves it from nginx. Proxy `/auth/` and `/profile/` to the server, proxy `/` only when the `Upgrade` header is set, and do not proxy `/metrics`. Verify `nginx -t` against that config succeeds.
+- [x] 2.3 Add a Compose file with `web`, `server`, and `postgres:17` where only host port 80 is published and `DATABASE_URL` plus `JWT_SECRET` come from the environment. Verify `docker compose config` shows no published ports other than 80.
 
 ## 3. Terraform
 

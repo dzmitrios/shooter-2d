@@ -4,8 +4,8 @@ Co-op 2D top-down survival shooter. pnpm monorepo: React client, Node server, Po
 
 ## Prerequisites
 
-- Node.js 20+
-- [pnpm](https://pnpm.io/installation) 12.5.1 (`corepack enable` then `corepack prepare pnpm@12.5.1 --activate`)
+- Node.js 26
+- [pnpm](https://pnpm.io/installation) 12.5.1 (`npm install -g pnpm@12.5.1`)
 - Docker (for PostgreSQL)
 
 ## 1. Install dependencies
